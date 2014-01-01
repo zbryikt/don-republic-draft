@@ -1,0 +1,147 @@
+doctype html
+//- basic libraries: jquery(1.10.2), d3js(3.3.11), angularjs(1.2.3), bootstrap(3.0)/semantic-ui(0.9.3/0.9.5)
+- var usecdn = false
+- var useog = false
+- var lib = { jquery: true, d3js: true, angular: true, bootstrap: true, semantic: false }
+- var assets = "assets"
+- var thumbnail = "http://dummy.thumbnail"
+html(lang="en")
+  head(prefix="og: http://ogp.me/ns#")
+    meta(charset="utf-8")
+    title template
+    // libraries
+    include library.jade
+    // custom files
+    link(rel="stylesheet",type="text/css",href="sample.css")
+    script(type="text/javascript",src='//cdn.firebase.com/v0/firebase.js')
+    script(type="text/javascript",src="//cdn.firebase.com/v0/firebase-simple-login.js")
+    script(type="text/javascript",src="//cdn.firebase.com/libs/angularfire/0.5.0/angularfire.min.js")
+
+    script(type="text/javascript",src="index.js")
+  body(ng-app="main",ng-controller="ctrl.main")
+    .navbar.navbar-default.navbar-fixed-top(role="navigation")
+      .navbar-header
+        a.navbar-brand(href="#") 動民主
+      ul.nav.navbar-nav.navbar-right(ng-controller="ctrl.user")
+        li: a(href="#",ng-show="!user",ng-click="login()") login
+        li: a(href="#",ng-show="user") {{user.username}}
+        li: a(href="#",ng-show="user",ng-click="logout()") logout
+    #content
+      h3
+        | 提案列表
+      #proposal(ng-controller="ctrl.proposal")
+        
+        form.form-inline#new-proposal.proposal
+          .ib
+            label 建立新提案
+            .form-group: input.form-control(type="text",placeholder="提案標題",ng-model="cur.name")
+            .form-group: input.form-control(type="text",placeholder="提案描述",ng-model="cur.desc")
+            .btn.btn-success(ng-click="create()") 新增
+        .proposal(ng-repeat="(k,p) in list")
+          .panel
+            .vote
+              .btn(ng-click="vote(p,0)")
+                i.glyphicon.glyphicon-chevron-up
+                | {{p.vote[0].length}}
+              .btn(ng-click="vote(p,1)") 
+                i.glyphicon.glyphicon-minus
+                | {{p.vote[1].length}}
+              .btn(ng-click="vote(p,2)") 
+                i.glyphicon.glyphicon-chevron-down
+                | {{p.vote[2].length}}
+            .btn: i.glyphicon.glyphicon-remove(ng-click="delete(k)")
+
+          h3 提案: {{p.name}}
+          .ib
+            .summary
+              .title 摘要
+              .desc {{p.desc}} 
+            h3 方案
+            .plans
+              .row
+                .col-sm-6(style="border-right: 1px dashed #999")
+                  .title 以下方案可供選擇：
+                  .ib(ng-controller="ctrl.plan")
+                    .plan(ng-repeat="s in p.plan",ng-click="pick(p,s)")
+                      | {{get("plan",s).name}}
+                      i.glyphicon.glyphicon-remove(ng-click="purge(s)",ng-show="p.creator.id==user.id")
+                .col-sm-6
+                  .title 你選擇的方案
+                  .ib(ng-controller="ctrl.plan")
+                    .plan(ng-repeat="s in picked(p)",ng-click="pick(p, s)") {{get("plan",s).name}}
+
+              .panel(ng-show="false")
+                .title 可選的方案
+                .plan(ng-repeat="s in picked(p,false)",ng-controller="ctrl.plan")
+                  span(ng-click="pick(p, s)")
+                    | {{get("plan",s).name}}
+                    span(ng-click="purge(s)") x
+              .title 你也可以提新方案
+              form.plan.form-inline(ng-controller="ctrl.plan")
+                .form-group: input.form-control(type="text",placeholder="方案簡稱",ng-model="cur.name")
+                .form-group: input.form-control(type="text",placeholder="方案描述",ng-model="cur.desc")
+                button.btn.btn-success(ng-click="createUnder('proposal',k,p)") 新增
+            hr
+            .comments(ng-controller="ctrl.comment")
+              h3 留言
+              .comment.form-inline
+                .form-group(style="width:50%"): input.form-control(type="text",ng-model="cur.desc",placeholder="...")
+                .btn.btn-success(ng-click="createUnder('proposal',k,p)") 送出
+              .comment(ng-repeat="c in p.comment") 
+                .desc
+                  | {{get("comment",c).desc}}
+                  .panel
+                    .vote
+                      .btn(ng-click="vote(get('comment',c),0)")
+                        i.glyphicon.glyphicon-chevron-up
+                        | {{get('comment',c).vote[0].length}}
+                      .btn(ng-click="vote(get('comment',c),1)")
+                        i.glyphicon.glyphicon-minus
+                        | {{get('comment',c).vote[1].length}}
+                      .btn(ng-click="vote(get('comment',c),2)")
+                        i.glyphicon.glyphicon-chevron-down
+                        | {{get('comment',c).vote[2].length}}
+                    .btn: i.glyphicon.glyphicon-remove(ng-click="deleteUnder(c,p)")
+                    | by 
+                    i {{get("comment",c).creator.username || "anonymous"}}
+
+
+          div(ng-show="false")
+            span title
+            span description
+            span creator
+            span administrator
+            span options
+            span vision
+            span question
+            span cause
+            span solution
+      div(ng-show="false")
+        h3 Plan
+        #plan(ng-controller="ctrl.plan")
+          div new plan
+            input(type="text",placeholder="name",ng-model="cur.name")
+            input(type="text",placeholder="desc",ng-model="cur.desc")
+            button(ng-click="create()") new
+          .plan(ng-repeat="(k,p) in list")
+            h4
+              | {{p.name}}
+              span(ng-click="purge(k)") x
+            .desc 
+              | {{p.desc}}
+            .vote
+              span(ng-click="vote(p,0)") up {{p.vote[0].length}}
+              span(ng-click="vote(p,1)") neutral {{p.vote[1].length}}
+              span(ng-click="vote(p,2)") down {{p.vote[2].length}}
+            .desc
+              | created by {{p.creator.username}}
+        h3 Names
+        #names(ng-controller="ctrl.name")
+          input(type="text",placholder="find a name...",ng-model="keyword")
+          | {{keyword}}
+          .names(ng-repeat="v in result")
+            h4 {{v.name}}
+            .desc
+              span(ng-repeat="i in v.list") {{i.type}}
+
+      #footer
