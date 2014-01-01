@@ -1,0 +1,104 @@
+doctype html
+//- basic libraries: jquery(1.10.2), d3js(3.3.11), angularjs(1.2.3), bootstrap(3.0)/semantic-ui(0.9.3/0.9.5)
+- var usecdn = false
+- var useog = false
+- var lib = { jquery: true, d3js: true, angular: true, bootstrap: false, semantic: true }
+- var assets = "assets"
+- var thumbnail = "http://dummy.thumbnail"
+html(lang="en")
+  head(prefix="og: http://ogp.me/ns#")
+    meta(charset="utf-8")
+    title template
+    // libraries
+    include library.jade
+    // custom files
+    link(rel="stylesheet",type="text/css",href="index.css")
+    script(type="text/javascript",src='//cdn.firebase.com/v0/firebase.js')
+    script(type="text/javascript",src="//cdn.firebase.com/v0/firebase-simple-login.js")
+    script(type="text/javascript",src="//cdn.firebase.com/libs/angularfire/0.5.0/angularfire.min.js")
+
+    script(type="text/javascript",src="index.js")
+  body(ng-app="main",ng-controller="ctrl.main")
+    h3 Login Panel
+    #login(ng-controller="ctrl.user")
+      button(ng-click="login()",ng-show="!user") login with facebook
+      button(ng-click="logout()",ng-show="user") logout
+    h3 User Profile
+    #user
+      span id: {{user.id}}
+      span username: {{user.displayName}}
+      span email
+      span config
+      span tags(for group)
+      span proposal list
+      span question list
+      span vote state
+    h3 Group
+    #group(ng-controller="ctrl.group")
+      div new group
+        input(type="text",placeholder="name",ng-model="cur.name")
+        input(type="text",placeholder="desc",ng-model="cur.desc")
+        button(ng-click="create()") new
+        button(ng-click="debug()") debg
+        | {{cur}}
+      div(ng-repeat="(k,g) in list")
+        span(ng-click="delete(k)") x
+        span id: {{g.id}}
+        span name: {{g.name}}
+        span description: {{g.desc}}
+        span 
+          | member: 
+          span(ng-repeat="(m,v) in g.users") {{m}}
+        input(type="text",placeholder="new member",ng-model="g.newMember")
+        button(ng-click="addMember(g)") add
+    h3 Proposal
+    #proposal(ng-controller="ctrl.proposal")
+      div new proposal
+        input(type="text",placeholder="name",ng-model="cur.name")
+        input(type="text",placeholder="desc",ng-model="cur.desc")
+        button(ng-click="create()") new
+      .proposal(ng-repeat="(k,p) in list")
+        h4 
+        | {{p.name}}
+        span(ng-click="delete(k)") x
+        .desc {{p.desc}}
+        .vote
+          span(ng-click="vote(p,0)") up {{p.vote[0].length}}
+          span(ng-click="vote(p,1)") neutral {{p.vote[1].length}}
+          span(ng-click="vote(p,2)") down {{p.vote[2].length}}
+        .strategy(ng-repeat="k in p.strategy")
+          span
+            | {{get("strategy",k).name}}
+            span(ng-click="purge(k)") x
+        .strategy(ng-controller="ctrl.strategy")
+          input(type="text",placeholder="name",ng-model="cur.name")
+          input(type="text",placeholder="desc",ng-model="cur.desc")
+          button(ng-click="createUnder(k,p)") new
+      span title
+      span description
+      span creator
+      span administrator
+      span options
+      span vision
+      span question
+      span cause
+      span solution
+    h3 Strategy
+    #strategy(ng-controller="ctrl.strategy")
+      div new strategy
+        input(type="text",placeholder="name",ng-model="cur.name")
+        input(type="text",placeholder="desc",ng-model="cur.desc")
+        button(ng-click="create()") new
+      .strategy(ng-repeat="(k,p) in list")
+        h4
+          | {{p.name}}
+          span(ng-click="purge(k)") x
+        .desc 
+          | {{p.desc}}
+        .vote
+          span(ng-click="vote(p,0)") up {{p.vote[0].length}}
+          span(ng-click="vote(p,1)") neutral {{p.vote[1].length}}
+          span(ng-click="vote(p,2)") down {{p.vote[2].length}}
+        .desc
+          | created by {{p.creator.username}}
+    #footer

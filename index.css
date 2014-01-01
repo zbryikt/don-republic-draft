@@ -1,0 +1,26 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%; }
+
+body {
+  padding: 20px;
+  margin-bottom: 20px; }
+
+#user span, #proposal span, #strategy span, #group span {
+  background: #eeffee;
+  padding: 5px;
+  margin: 5px;
+  display: inline-block; }
+
+#proposal {
+  border: 1px solid black;
+  padding: 10px; }
+
+.proposal {
+  border: 1px solid #999999;
+  padding: 10px; }
+
+#footer {
+  height: 50px; }
