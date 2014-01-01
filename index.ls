@@ -11,15 +11,34 @@ angular.module 'main', <[firebase]>
   ret.handle = {}
   ret.on = (n,f) -> ret.handle.[][n].push f
 
+  ret.name = do
+    ref: $firebase new Firebase \https://don.firebaseio.com/name
+    add: (n, type, id, field) ->
+      if @ref.{}n.[][n]filter(-> it.type==type and it.id==id)length => return
+      @ref.n.[][n]push {type,id,field}
+      if not (type of @ref.{}t) => @ref.t[type] = 1
+      @ref.$save!
+    prune: (n) ->
+      @ref.n[n] = @ref.n.[][n]map(->
+        try if ret[it.type][it.id][it.field]!=n => throw \changed
+        catch => it.id = null
+        it
+      )filter -> it and it.id
+      @ref.$save!
+
   base = (name) -> do
     ref: $firebase new Firebase "https://don.firebaseio.com/#{name}"
-    create: -> @ref.$add(it <<< {creator: ret.user, id: @ref.length + 1})
+    create: ->
+      n = @ref.$add(it <<< {creator: ret.user, create_time: new Date!getTime!})
+      ret.name.add it.name, name, n.name!, \name
+      n
     factory: -> {}
 
   ret.user = base \user
   ret.group = base \group
   ret.proposal = base \proposal
-  ret.strategy = base \strategy
+  ret.plan = base \plan
+  ret.comment = base \comment
 
   ret
 
@@ -35,22 +54,49 @@ ctrl.user = ($scope,DataService) ->
     logout: -> DataService.auth.logout \facebook
   DataService.on \user.changed, (u) ->
     $scope.$apply -> $scope.cur = u
-    $scope.update u
+
+ctrl.name = ($scope, $timeout, DataService) ->
+  $scope.data = DataService.name.ref
+  $scope.handle = null
+  $scope.keyword = ""
+  search = ->
+    $scope.result = [k for k of $scope.data.n]filter(->it.indexOf($scope.keyword)>=0)map ->
+      DataService.name.prune it
+      {name: it, list: $scope.data.n[it]}
+    $scope.handle = null
+
+  $scope.$watch "keyword", ->
+    if $scope.handle => $timeout.cancel $scope.handle
+    $scope.handle = $timeout search, 500
+
 
 ctrl.base = ($scope, DS, ctrl-name) -> do
-  create: ->
+  create: (t,k,p) ->
     ret = DS[ctrl-name]create $scope.cur
     $scope.cur = DS[ctrl-name]factory!
     ret
-  get: (name, id) -> DS[name]ref[id] or {}
+  create-under: (type, id, ref) ->
+    $scope.cur[type] = id
+    item = $scope.create!
+    console.log ref
+    ref.[][ctrl-name].push item.name!
+    DS[type]ref.$save!
   delete: -> DS[ctrl-name]ref.$remove(it)
-  update: ->
+  delete-under: (it, ref) ->
+    obj = ref.[][ctrl-name]
+    if it in obj => obj.splice obj.indexOf(it), 1
+    $scope.delete it
+  get: (name, id) -> DS[name]ref[id] or {}
   vote: (p,d) ->
     if not (id = if DS.user => that.id else) => return
     if id in (p.{}vote[d] or []) => p.vote[d]splice p.vote[d]indexOf(id), 1
     else if id in ((for it in [0 1 2]=>p.{}vote[it] or [])reduce (-> &0 ++ &1),[]) => return
     else p.{}vote.[][d].push id
     DS[ctrl-name]ref.$save!
+  admin: (g, u, lv=1) ->
+    if u in g.admin => delete g.admin
+    else g.admin[u] = lv
+    $scope.list.$save!
   list: DS[ctrl-name]ref
   cur: DS[ctrl-name]factory!
 
@@ -63,18 +109,25 @@ ctrl.group = ($scope, DataService) ->
 
 ctrl.proposal = ($scope, DataService) ->
   $scope <<< ctrl.base $scope, DataService, \proposal
+  $scope.picked = (p, picked=true) ->
+    user = DataService.user or {}
+    p.plan.filter -> !picked xor (it in p.{}stand.[][user.id])
+  $scope.pick = (p,k) ->
+    user = DataService.user or {}
+    if not user => return
+    obj = p.{}stand.[][user.id]
+    if k in obj => obj.splice obj.indexOf(k), 1 else => obj.push k
+    $scope.list.$save!
 
-ctrl.strategy = ($scope, DataService) ->
-  $scope <<< ctrl.base $scope, DataService, \strategy
-  $scope.create-under = (k,p) ->
-    item = $scope.create!
-    item.proposal = k
-    p.[]strategy.push item.name!
-    DataService.proposal.ref.$save!
+ctrl.plan = ($scope, DataService) ->
+  $scope <<< ctrl.base $scope, DataService, \plan
   $scope.purge = ->
-    obj = (DataService.proposal.[]strategy[it] or [])
+    pk = $scope.get(\plan, it)proposal
+    obj = (DataService.proposal.ref[pk] or {}).[]plan
     if it in obj =>
       obj.splice obj.indexOf(it),1
-      DataServie.proposal.ref.$save!
-    $scope.delete!
+      DataService.proposal.ref.$save!
+    $scope.delete it
 
+ctrl.comment = ($scope, DataService) ->
+  $scope <<< ctrl.base $scope, DataService, \comment

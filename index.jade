@@ -66,14 +66,27 @@ html(lang="en")
           span(ng-click="vote(p,0)") up {{p.vote[0].length}}
           span(ng-click="vote(p,1)") neutral {{p.vote[1].length}}
           span(ng-click="vote(p,2)") down {{p.vote[2].length}}
-        .strategy(ng-repeat="k in p.strategy")
-          span
-            | {{get("strategy",k).name}}
-            span(ng-click="purge(k)") x
-        .strategy(ng-controller="ctrl.strategy")
+        h5 picked
+        .plan(ng-repeat="s in picked(p)",ng-controller="ctrl.plan")
+          span(ng-click="pick(p, s)")
+            | {{get("plan",s).name}}
+            span(ng-click="purge(s)") x
+        h5 not picked
+        .plan(ng-repeat="s in picked(p,false)",ng-controller="ctrl.plan")
+          span(ng-click="pick(p, s)")
+            | {{get("plan",s).name}}
+            span(ng-click="purge(s)") x
+        .plan(ng-controller="ctrl.plan")
           input(type="text",placeholder="name",ng-model="cur.name")
           input(type="text",placeholder="desc",ng-model="cur.desc")
-          button(ng-click="createUnder(k,p)") new
+          button(ng-click="createUnder('proposal',k,p)") new
+        .comments(ng-controller="ctrl.comment")
+          .comment
+            input(type="text",ng-model="cur.desc",placeholder="leave comment")
+            button(ng-click="createUnder('proposal',k,p)") 送出
+          .comment(ng-repeat="c in p.comment") 
+            span {{get("comment",c).desc}}
+            span(ng-click="deleteUnder(c, p)") x
       span title
       span description
       span creator
@@ -83,13 +96,13 @@ html(lang="en")
       span question
       span cause
       span solution
-    h3 Strategy
-    #strategy(ng-controller="ctrl.strategy")
-      div new strategy
+    h3 Plan
+    #plan(ng-controller="ctrl.plan")
+      div new plan
         input(type="text",placeholder="name",ng-model="cur.name")
         input(type="text",placeholder="desc",ng-model="cur.desc")
         button(ng-click="create()") new
-      .strategy(ng-repeat="(k,p) in list")
+      .plan(ng-repeat="(k,p) in list")
         h4
           | {{p.name}}
           span(ng-click="purge(k)") x
@@ -101,4 +114,12 @@ html(lang="en")
           span(ng-click="vote(p,2)") down {{p.vote[2].length}}
         .desc
           | created by {{p.creator.username}}
+    h3 Names
+    #names(ng-controller="ctrl.name")
+      input(type="text",placholder="find a name...",ng-model="keyword")
+      | {{keyword}}
+      .names(ng-repeat="v in result")
+        h4 {{v.name}}
+        .desc
+          span(ng-repeat="i in v.list") {{i.type}}
     #footer

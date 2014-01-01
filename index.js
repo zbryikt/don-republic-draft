@@ -20,11 +20,52 @@ angular.module('main', ['firebase']).factory('DataService', function($firebase){
     var ref$;
     return ((ref$ = ret.handle)[n] || (ref$[n] = [])).push(f);
   };
+  ret.name = {
+    ref: $firebase(new Firebase('https://don.firebaseio.com/name')),
+    add: function(n, type, id, field){
+      var ref$, ref1$;
+      if (((ref$ = (ref1$ = this.ref).n || (ref1$.n = {}))[n] || (ref$[n] = [])).filter(function(it){
+        return it.type === type && it.id === id;
+      }).length) {
+        return;
+      }
+      ((ref$ = this.ref.n)[n] || (ref$[n] = [])).push({
+        type: type,
+        id: id,
+        field: field
+      });
+      if (!(type in ((ref$ = this.ref).t || (ref$.t = {})))) {
+        this.ref.t[type] = 1;
+      }
+      return this.ref.$save();
+    },
+    prune: function(n){
+      var ref$;
+      this.ref.n[n] = ((ref$ = this.ref.n)[n] || (ref$[n] = [])).map(function(it){
+        var e;
+        try {
+          if (ret[it.type][it.id][it.field] !== n) {
+            throw 'changed';
+          }
+        } catch (e$) {
+          e = e$;
+          it.id = null;
+        }
+        return it;
+      }).filter(function(it){
+        return it && it.id;
+      });
+      return this.ref.$save();
+    }
+  };
   base = function(name){
     return {
       ref: $firebase(new Firebase("https://don.firebaseio.com/" + name)),
       create: function(it){
-        return this.ref.$add((it.creator = ret.user, it.id = this.ref.length + 1, it));
+        var n;
+        n = this.ref.$add((it.creator = ret.user, it.create_time = new Date().getTime(), it));
+        ret.name.add(it.name, name, n.name(), 'name');
+        return n;
       },
       factory: function(){
         return {};
@@ -34,7 +75,8 @@ angular.module('main', ['firebase']).factory('DataService', function($firebase){
   ret.user = base('user');
   ret.group = base('group');
   ret.proposal = base('proposal');
-  ret.strategy = base('strategy');
+  ret.plan = base('plan');
+  ret.comment = base('comment');
   return ret;
 });
 ctrl = {};
@@ -54,27 +96,72 @@ ctrl.user = function($scope, DataService){
     return DataService.auth.logout('facebook');
   };
   return DataService.on('user.changed', function(u){
-    $scope.$apply(function(){
+    return $scope.$apply(function(){
       return $scope.cur = u;
     });
-    return $scope.update(u);
+  });
+};
+ctrl.name = function($scope, $timeout, DataService){
+  var search;
+  $scope.data = DataService.name.ref;
+  $scope.handle = null;
+  $scope.keyword = "";
+  search = function(){
+    var k;
+    $scope.result = (function(){
+      var results$ = [];
+      for (k in $scope.data.n) {
+        results$.push(k);
+      }
+      return results$;
+    }()).filter(function(it){
+      return it.indexOf($scope.keyword) >= 0;
+    }).map(function(it){
+      DataService.name.prune(it);
+      return {
+        name: it,
+        list: $scope.data.n[it]
+      };
+    });
+    return $scope.handle = null;
+  };
+  return $scope.$watch("keyword", function(){
+    if ($scope.handle) {
+      $timeout.cancel($scope.handle);
+    }
+    return $scope.handle = $timeout(search, 500);
   });
 };
 ctrl.base = function($scope, DS, ctrlName){
   return {
-    create: function(){
+    create: function(t, k, p){
       var ret;
       ret = DS[ctrlName].create($scope.cur);
       $scope.cur = DS[ctrlName].factory();
       return ret;
     },
-    get: function(name, id){
-      return DS[name].ref[id] || {};
+    createUnder: function(type, id, ref){
+      var item;
+      $scope.cur[type] = id;
+      item = $scope.create();
+      console.log(ref);
+      (ref[ctrlName] || (ref[ctrlName] = [])).push(item.name());
+      return DS[type].ref.$save();
     },
     'delete': function(it){
       return DS[ctrlName].ref.$remove(it);
     },
-    update: function(){},
+    deleteUnder: function(it, ref){
+      var obj;
+      obj = ref[ctrlName] || (ref[ctrlName] = []);
+      if (in$(it, obj)) {
+        obj.splice(obj.indexOf(it), 1);
+      }
+      return $scope['delete'](it);
+    },
+    get: function(name, id){
+      return DS[name].ref[id] || {};
+    },
     vote: function(p, d){
       var id, that, it, ref$;
       if (!(id = (that = DS.user) ? that.id : void 8)) {
@@ -98,6 +185,15 @@ ctrl.base = function($scope, DS, ctrlName){
       }
       return DS[ctrlName].ref.$save();
     },
+    admin: function(g, u, lv){
+      lv == null && (lv = 1);
+      if (in$(u, g.admin)) {
+        delete g.admin;
+      } else {
+        g.admin[u] = lv;
+      }
+      return $scope.list.$save();
+    },
     list: DS[ctrlName].ref,
     cur: DS[ctrlName].factory()
   };
@@ -111,26 +207,46 @@ ctrl.group = function($scope, DataService){
   };
 };
 ctrl.proposal = function($scope, DataService){
-  return import$($scope, ctrl.base($scope, DataService, 'proposal'));
-};
-ctrl.strategy = function($scope, DataService){
-  import$($scope, ctrl.base($scope, DataService, 'strategy'));
-  $scope.createUnder = function(k, p){
-    var item;
-    item = $scope.create();
-    item.proposal = k;
-    (p.strategy || (p.strategy = [])).push(item.name());
-    return DataService.proposal.ref.$save();
+  import$($scope, ctrl.base($scope, DataService, 'proposal'));
+  $scope.picked = function(p, picked){
+    var user;
+    picked == null && (picked = true);
+    user = DataService.user || {};
+    return p.plan.filter(function(it){
+      var ref$, ref1$, ref2$, key$;
+      return !(ref$ = !picked) !== !(ref1$ = in$(it, (ref2$ = p.stand || (p.stand = {}))[key$ = user.id] || (ref2$[key$] = []))) && (ref$ || ref1$);
+    });
   };
+  return $scope.pick = function(p, k){
+    var user, obj, ref$, key$;
+    user = DataService.user || {};
+    if (!user) {
+      return;
+    }
+    obj = (ref$ = p.stand || (p.stand = {}))[key$ = user.id] || (ref$[key$] = []);
+    if (in$(k, obj)) {
+      obj.splice(obj.indexOf(k), 1);
+    } else {
+      obj.push(k);
+    }
+    return $scope.list.$save();
+  };
+};
+ctrl.plan = function($scope, DataService){
+  import$($scope, ctrl.base($scope, DataService, 'plan'));
   return $scope.purge = function(it){
-    var obj, ref$;
-    obj = ((ref$ = DataService.proposal).strategy || (ref$.strategy = []))[it] || [];
+    var pk, obj, ref$;
+    pk = $scope.get('plan', it).proposal;
+    obj = (ref$ = DataService.proposal.ref[pk] || {}).plan || (ref$.plan = []);
     if (in$(it, obj)) {
       obj.splice(obj.indexOf(it), 1);
-      DataServie.proposal.ref.$save();
+      DataService.proposal.ref.$save();
     }
-    return $scope['delete']();
+    return $scope['delete'](it);
   };
+};
+ctrl.comment = function($scope, DataService){
+  return import$($scope, ctrl.base($scope, DataService, 'comment'));
 };
 function import$(obj, src){
   var own = {}.hasOwnProperty;
