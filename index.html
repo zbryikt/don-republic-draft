@@ -64,7 +64,9 @@
             <input type="text" ng-model="cur.desc" placeholder="leave comment">
             <button ng-click="createUnder('proposal',k,p)">送出</button>
           </div>
-          <div ng-repeat="c in p.comment" class="comment"> <span>{{get("comment",c).desc}}</span><span ng-click="deleteUnder(c, p)">x</span></div>
+          <div ng-repeat="c in p.comment" class="comment"> <span>{{get("comment",c).desc}}</span><span ng-click="deleteUnder(c, p)">x</span>
+            <div class="vote"><span ng-click="vote(get('comment',c),0)">up {{get("comment",c).vote[0].length}}</span><span ng-click="vote(get('comment',c),1)">neutral {{get("comment",c).vote[1].length}}</span><span ng-click="vote(get('comment',c),2)">down {{get("comment",c).vote[2].length}}</span></div>
+          </div>
         </div>
       </div><span>title</span><span>description</span><span>creator</span><span>administrator</span><span>options</span><span>vision</span><span>question</span><span>cause</span><span>solution</span>
     </div>

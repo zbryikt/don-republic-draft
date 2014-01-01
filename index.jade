@@ -87,6 +87,10 @@ html(lang="en")
           .comment(ng-repeat="c in p.comment") 
             span {{get("comment",c).desc}}
             span(ng-click="deleteUnder(c, p)") x
+            .vote
+              span(ng-click="vote(get('comment',c),0)") up {{get("comment",c).vote[0].length}}
+              span(ng-click="vote(get('comment',c),1)") neutral {{get("comment",c).vote[1].length}}
+              span(ng-click="vote(get('comment',c),2)") down {{get("comment",c).vote[2].length}}
       span title
       span description
       span creator
