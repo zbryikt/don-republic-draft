@@ -88,7 +88,8 @@ ctrl.base = ($scope, DS, ctrl-name) -> do
     $scope.delete it
   get: (name, id) -> DS[name]ref[id] or {}
   vote: (p,d) ->
-    if not (id = if DS.user => that.id else) => return
+    #if not (id = if DS.user => that.id) => return
+    id = if DS.user => that.id else 0
     if id in (p.{}vote[d] or []) => p.vote[d]splice p.vote[d]indexOf(id), 1
     else if id in ((for it in [0 1 2]=>p.{}vote[it] or [])reduce (-> &0 ++ &1),[]) => return
     else p.{}vote.[][d].push id

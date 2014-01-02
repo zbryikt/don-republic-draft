@@ -164,9 +164,7 @@ ctrl.base = function($scope, DS, ctrlName){
     },
     vote: function(p, d){
       var id, that, it, ref$;
-      if (!(id = (that = DS.user) ? that.id : void 8)) {
-        return;
-      }
+      id = (that = DS.user) ? that.id : 0;
       if (in$(id, (p.vote || (p.vote = {}))[d] || [])) {
         p.vote[d].splice(p.vote[d].indexOf(id), 1);
       } else if (in$(id, (function(){
