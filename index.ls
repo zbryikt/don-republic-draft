@@ -1,4 +1,10 @@
 angular.module 'main', <[firebase]>
+.directive \contenteditable, ->
+  require: \ngModel
+  scope: ngModel: \=
+  link: (scope, e, attrs, ctrl) ->
+    e.on \keyup, -> scope.$apply -> scope.ng-model = e.html!
+    scope.$watch 'ngModel', -> e.html scope.ng-model
 .factory \DataService, ($firebase) ->
   ret = {}
   ret.user = null
@@ -81,7 +87,9 @@ ctrl.base = ($scope, DS, ctrl-name) -> do
     console.log ref
     ref.[][ctrl-name].push item.name!
     DS[type]ref.$save!
-  delete: -> DS[ctrl-name]ref.$remove(it)
+  delete: ->
+    if (!DS.user and DS[ctrl-name]ref[it]creator) or (DS.user and DS.user.id != DS[ctrl-name]ref[it].{}creator.id) => return
+    DS[ctrl-name]ref.$remove(it)
   delete-under: (it, ref) ->
     obj = ref.[][ctrl-name]
     if it in obj => obj.splice obj.indexOf(it), 1
@@ -90,6 +98,7 @@ ctrl.base = ($scope, DS, ctrl-name) -> do
   vote: (p,d) ->
     #if not (id = if DS.user => that.id) => return
     id = if DS.user => that.id else 0
+    if !p.{}config.{}vote.allow-anonymous and !id => return
     if id in (p.{}vote[d] or []) => p.vote[d]splice p.vote[d]indexOf(id), 1
     else if id in ((for it in [0 1 2]=>p.{}vote[it] or [])reduce (-> &0 ++ &1),[]) => return
     else p.{}vote.[][d].push id
@@ -98,6 +107,7 @@ ctrl.base = ($scope, DS, ctrl-name) -> do
     if u in g.admin => delete g.admin
     else g.admin[u] = lv
     $scope.list.$save!
+  save: (k) -> DS[ctrl-name]ref.$save!
   list: DS[ctrl-name]ref
   cur: DS[ctrl-name]factory!
 
@@ -112,12 +122,16 @@ ctrl.proposal = ($scope, DataService) ->
   $scope <<< ctrl.base $scope, DataService, \proposal
   $scope.picked = (p, picked=true) ->
     user = DataService.user or {}
-    p.plan.filter -> !picked xor (it in p.{}stand.[][user.id])
+    stand = p.{}stand.[][user.id]
+    p.[]plan.filter(-> !picked xor (it in stand))sort (a,b) -> stand.indexOf(a) - stand.indexOf(b)
   $scope.pick = (p,k) ->
     user = DataService.user or {}
-    if not user => return
+    p.{}config.{}vote
+    if not (p.config.vote.allow-anonymous or user.id) => return
     obj = p.{}stand.[][user.id]
-    if k in obj => obj.splice obj.indexOf(k), 1 else => obj.push k
+    if k in obj => obj.splice obj.indexOf(k), 1 else =>
+      if p.config.vote.choice == \1 and obj.length > 0 => obj.pop!
+      obj.push k
     $scope.list.$save!
 
 ctrl.plan = ($scope, DataService) ->

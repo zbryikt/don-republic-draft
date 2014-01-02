@@ -31,12 +31,42 @@ html(lang="en")
         | 提案列表
       #proposal(ng-controller="ctrl.proposal")
         
-        form.form-inline#new-proposal.proposal
-          .ib
-            label 建立新提案
-            .form-group: input.form-control(type="text",placeholder="提案標題",ng-model="cur.name")
-            .form-group: input.form-control(type="text",placeholder="提案描述",ng-model="cur.desc")
+        form#new-proposal.proposal
+          .ib(style="text-align: center;cursor: pointer",ng-click="nppanel=true",ng-show="!nppanel") 
+            | 建立新提案
+          .ib(ng-show="nppanel")
+            .form-group
+              label 提案標題
+              input.form-control(type="text",placeholder="例如：興建丹大野生動物樂園之可能性",ng-model="cur.name")
+            .form-group
+              label 提案摘要
+              input.form-control(type="text",placeholder="簡述此提案之內容及重點提示",ng-model="cur.desc")
+            label 設定
+            .form-group
+              .checkbox-inline
+                label
+                  input(type="checkbox",ng-model="cur.config.vote.allowAnonymous")
+                  | 允許未登入使用者投票
+              .checkbox-inline
+                label
+                  input(type="checkbox",ng-model="cur.config.vote.allowProxy",disabled)
+                  | 允許代理投票
+            label 投票類型
+            .form-group
+              .radio-inline
+                label
+                  input(type="radio",ng-model="cur.config.vote.choice",value="1")
+                  | 單選投票
+              .radio-inline
+                label
+                  input(type="radio",ng-model="cur.config.vote.choice",value="2")
+                  | 複選投票
+              .radio-inline
+                label
+                  input(type="radio",ng-model="cur.config.vote.choice",value="3")
+                  | 複選且排名投票
             .btn.btn-success(ng-click="create()") 新增
+            .btn.btn-default(ng-click="nppanel=false") 取消
         .proposal(ng-repeat="(k,p) in list")
           .panel
             .vote
@@ -50,12 +80,22 @@ html(lang="en")
                 i.glyphicon.glyphicon-chevron-down
                 | {{p.vote[2].length}}
             .btn: i.glyphicon.glyphicon-remove(ng-click="delete(k)")
+            .btn: i.glyphicon.glyphicon-floppy-disk(ng-click="save(k)")
 
-          h3 提案: {{p.name}}
+          h3
+            | 提案: 
+            span(contenteditable,ng-model="p.name")
+            | 
+            small(ng-show="p.config.vote.choice==1") 單選
+            small(ng-show="p.config.vote.choice==2 || !p.config.vote.choice") 複選
+            small(ng-show="p.config.vote.choice==3") 複選 / 排名
+            | 
+            small(ng-show="p.config.vote.allowAnonymous") 不需登入
+            
           .ib
             .summary
               .title 摘要
-              .desc {{p.desc}} 
+              .desc(contenteditable,ng-model="p.desc")
             h3 方案
             .plans
               .row
@@ -68,7 +108,9 @@ html(lang="en")
                 .col-sm-6
                   .title 你選擇的方案
                   .ib(ng-controller="ctrl.plan")
-                    .plan(ng-repeat="s in picked(p)",ng-click="pick(p, s)") {{get("plan",s).name}}
+                    .plan(ng-repeat="s in picked(p)",ng-click="pick(p, s)") 
+                      | {{get("plan",s).name}}
+                      .rank(ng-show="p.config.vote.choice==3") {{$index + 1}}
 
               .panel(ng-show="false")
                 .title 可選的方案

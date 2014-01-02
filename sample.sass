@@ -11,13 +11,6 @@ body
 #content
   margin: 50px 20px 20px
 
-#user, #proposal, #plan, #group
-  span
-    background: #efe
-    padding: 5px
-    margin: 5px
-    display: inline-block
-
 #proposal
   padding: 10px
 
@@ -68,9 +61,24 @@ body
       margin: 3px
       display: inline-block
       cursor: pointer
+      position: relative
       .glyphicon-remove
         margin-left: 3px
         color: #999
+      .rank
+        position: absolute
+        top: -1px
+        right: -1px
+        font-size: 0.5em
+        background: #f00
+        color: #fff
+        font-weight: 900
+        display: inline-block
+        width: 14px
+        height: 14px
+        text-align: center
+        line-height: 14px
+        border-radius: 50%
 
 .comment
   .desc

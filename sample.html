@@ -28,16 +28,53 @@
     <div id="content">
       <h3>提案列表</h3>
       <div id="proposal" ng-controller="ctrl.proposal">
-        <form id="new-proposal" class="form-inline proposal">
-          <div class="ib">
-            <label>建立新提案</label>
+        <form id="new-proposal" class="proposal">
+          <div style="text-align: center;cursor: pointer" ng-click="nppanel=true" ng-show="!nppanel" class="ib">
+             
+            建立新提案
+          </div>
+          <div ng-show="nppanel" class="ib">
             <div class="form-group">
-              <input type="text" placeholder="提案標題" ng-model="cur.name" class="form-control">
+              <label>提案標題</label>
+              <input type="text" placeholder="例如：興建丹大野生動物樂園之可能性" ng-model="cur.name" class="form-control">
             </div>
             <div class="form-group">
-              <input type="text" placeholder="提案描述" ng-model="cur.desc" class="form-control">
+              <label>提案摘要</label>
+              <input type="text" placeholder="簡述此提案之內容及重點提示" ng-model="cur.desc" class="form-control">
+            </div>
+            <label>設定</label>
+            <div class="form-group">
+              <div class="checkbox-inline">
+                <label>
+                  <input type="checkbox" ng-model="cur.config.vote.allowAnonymous">允許未登入使用者投票
+                </label>
+              </div>
+              <div class="checkbox-inline">
+                <label>
+                  <input type="checkbox" ng-model="cur.config.vote.allowProxy" disabled>允許代理投票
+                </label>
+              </div>
+            </div>
+            <label>投票類型</label>
+            <div class="form-group">
+              <div class="radio-inline">
+                <label>
+                  <input type="radio" ng-model="cur.config.vote.choice" value="1">單選投票
+                </label>
+              </div>
+              <div class="radio-inline">
+                <label>
+                  <input type="radio" ng-model="cur.config.vote.choice" value="2">複選投票
+                </label>
+              </div>
+              <div class="radio-inline">
+                <label>
+                  <input type="radio" ng-model="cur.config.vote.choice" value="3">複選且排名投票
+                </label>
+              </div>
             </div>
             <div ng-click="create()" class="btn btn-success">新增</div>
+            <div ng-click="nppanel=false" class="btn btn-default">取消</div>
           </div>
         </form>
         <div ng-repeat="(k,p) in list" class="proposal">
@@ -48,12 +85,13 @@
               <div ng-click="vote(p,2)" class="btn"> <i class="glyphicon glyphicon-chevron-down"></i>{{p.vote[2].length}}</div>
             </div>
             <div class="btn"><i ng-click="delete(k)" class="glyphicon glyphicon-remove"></i></div>
+            <div class="btn"><i ng-click="save(k)" class="glyphicon glyphicon-floppy-disk"></i></div>
           </div>
-          <h3>提案: {{p.name}}</h3>
+          <h3>提案: <span contenteditable ng-model="p.name"></span> <small ng-show="p.config.vote.choice==1">單選</small><small ng-show="p.config.vote.choice==2 || !p.config.vote.choice">複選</small><small ng-show="p.config.vote.choice==3">複選 / 排名</small> <small ng-show="p.config.vote.allowAnonymous">不需登入</small></h3>
           <div class="ib">
             <div class="summary">
               <div class="title">摘要</div>
-              <div class="desc">{{p.desc}} </div>
+              <div contenteditable ng-model="p.desc" class="desc"></div>
             </div>
             <h3>方案</h3>
             <div class="plans">
@@ -67,7 +105,11 @@
                 <div class="col-sm-6">
                   <div class="title">你選擇的方案</div>
                   <div ng-controller="ctrl.plan" class="ib">
-                    <div ng-repeat="s in picked(p)" ng-click="pick(p, s)" class="plan">{{get("plan",s).name}}</div>
+                    <div ng-repeat="s in picked(p)" ng-click="pick(p, s)" class="plan">
+                       
+                      {{get("plan",s).name}}
+                      <div ng-show="p.config.vote.choice==3" class="rank">{{$index + 1}}</div>
+                    </div>
                   </div>
                 </div>
               </div>

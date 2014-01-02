@@ -56,12 +56,22 @@ html(lang="en")
       div new proposal
         input(type="text",placeholder="name",ng-model="cur.name")
         input(type="text",placeholder="desc",ng-model="cur.desc")
+        br
+        input(type="checkbox",ng-model="cur.config.vote.allowAnonymous")
+        | allow anonymous to vote /
+        input(type="radio",ng-model="cur.config.vote.choice",value="1")
+        | single choice vote /
+        input(type="radio",ng-model="cur.config.vote.choice",value="2")
+        | multiple choices vote /
+        input(type="radio",ng-model="cur.config.vote.choice",value="3")
+        | ordered vote
         button(ng-click="create()") new
       .proposal(ng-repeat="(k,p) in list")
-        h4 
-        | {{p.name}}
+        h4(contenteditable,ng-model="p.name")
         span(ng-click="delete(k)") x
-        .desc {{p.desc}}
+        span(ng-click="save(k)") s
+        .desc(contenteditable,ng-model="p.desc")
+        .desc config: {{p.config}}
         .vote
           span(ng-click="vote(p,0)") up {{p.vote[0].length}}
           span(ng-click="vote(p,1)") neutral {{p.vote[1].length}}

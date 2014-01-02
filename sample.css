@@ -11,12 +11,6 @@ body {
 #content {
   margin: 50px 20px 20px; }
 
-#user span, #proposal span, #plan span, #group span {
-  background: #eeffee;
-  padding: 5px;
-  margin: 5px;
-  display: inline-block; }
-
 #proposal {
   padding: 10px; }
 
@@ -65,10 +59,25 @@ body {
     padding: 3px;
     margin: 3px;
     display: inline-block;
-    cursor: pointer; }
+    cursor: pointer;
+    position: relative; }
     .plans .ib .plan .glyphicon-remove {
       margin-left: 3px;
       color: #999999; }
+    .plans .ib .plan .rank {
+      position: absolute;
+      top: -1px;
+      right: -1px;
+      font-size: 0.5em;
+      background: red;
+      color: white;
+      font-weight: 900;
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      text-align: center;
+      line-height: 14px;
+      border-radius: 50%; }
 
 .comment .desc {
   padding: 20px;
