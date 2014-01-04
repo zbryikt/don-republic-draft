@@ -207,6 +207,8 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
   ret.comment = base('comment');
   ret.vision = base('vision');
   ret.issue = base('issue');
+  ret.cause = base('cause');
+  ret.solution = base('solution');
   return ret;
 });
 ctrl = {};
@@ -440,6 +442,12 @@ ctrl.vision = function($scope, DataService){
 };
 ctrl.issue = function($scope, DataService){
   return import$($scope, ctrl.base($scope, DataService, 'issue'));
+};
+ctrl.cause = function($scope, DataService){
+  return import$($scope, ctrl.base($scope, DataService, 'cause'));
+};
+ctrl.solution = function($scope, DataService){
+  return import$($scope, ctrl.base($scope, DataService, 'solution'));
 };
 function in$(x, xs){
   var i = -1, l = xs.length >>> 0;

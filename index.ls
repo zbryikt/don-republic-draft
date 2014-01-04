@@ -88,6 +88,8 @@ angular.module 'main', <[firebase]>
   ret.comment = base \comment
   ret.vision = base \vision
   ret.issue = base \issue
+  ret.cause = base \cause
+  ret.solution = base \solution
 
   ret
 
@@ -197,3 +199,9 @@ ctrl.vision = ($scope, DataService) ->
 
 ctrl.issue = ($scope, DataService) ->
   $scope <<< ctrl.base $scope, DataService, \issue
+
+ctrl.cause = ($scope, DataService) ->
+  $scope <<< ctrl.base $scope, DataService, \cause
+
+ctrl.solution = ($scope, DataService) ->
+  $scope <<< ctrl.base $scope, DataService, \solution
