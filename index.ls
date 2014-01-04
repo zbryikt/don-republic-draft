@@ -101,13 +101,6 @@ ctrl.base = ($scope, DS, ctrl-name) -> do
     item = $scope.create!
     DS.link cat, {id,t:type,v:ref}, {t:ctrl-name,id:item.id,v:item}, 1
     item
-
-  create-under: (type, id, ref) ->
-    $scope.cur[type] = id
-    item = $scope.create!
-    console.log ref
-    ref.[][ctrl-name].push item.id
-    DS[type]ref.$save!
   delete: (key) ->
     if (!DS.user and DS[ctrl-name]ref[key]creator) or (DS.user and DS.user.id != DS[ctrl-name]ref[key].{}creator.id) => return
     types = {}
@@ -120,10 +113,6 @@ ctrl.base = ($scope, DS, ctrl-name) -> do
           types[des.t] = 1
     DS[ctrl-name]ref.$remove(key)
     for it of types => if it!=ctrl-name => DS[it]ref.$save!
-  delete-under: (it, ref) ->
-    obj = ref.[][ctrl-name]
-    if it in obj => obj.splice obj.indexOf(it), 1
-    $scope.delete it
   get: (type, id) -> DS[type]ref[id] or {}
   vote: (p,d) ->
     #if not (id = if DS.user => that.id) => return
@@ -144,6 +133,18 @@ ctrl.base = ($scope, DS, ctrl-name) -> do
     if type => ret = ret.filter -> it.t == type
     ret.map ~> @get it.t, it.id
   cur: DS[ctrl-name]factory!
+  picked: (p, picked=true) ->
+    stand = p.{}stand.[][(DS.user or {})id]
+    p.{}link.[]['choice']filter(-> !picked xor (it.id in stand))sort (a,b) -> stand.indexOf(a) - stand.indexOf(b)
+  pick: (p,k) ->
+    user = DS.user or {}
+    p.{}config.{}vote
+    if not (p.config.vote.allow-anonymous or user.id) => return
+    obj = p.{}stand.[][user.id]
+    if k in obj => obj.splice obj.indexOf(k), 1 else =>
+      if p.config.vote.choice == \1 and obj.length > 0 => obj.pop!
+      obj.push k
+    $scope.list.$save!
 
 ctrl.group = ($scope, DataService) ->
   $scope <<< ctrl.base $scope, DataService, \group
@@ -154,32 +155,22 @@ ctrl.group = ($scope, DataService) ->
 
 ctrl.proposal = ($scope, DataService) ->
   $scope <<< ctrl.base $scope, DataService, \proposal
-  $scope.picked = (p, picked=true) ->
-    user = DataService.user or {}
-    stand = p.{}stand.[][user.id]
-    p.[]plan.filter(-> !picked xor (it in stand))sort (a,b) -> stand.indexOf(a) - stand.indexOf(b)
-  $scope.pick = (p,k) ->
-    user = DataService.user or {}
-    p.{}config.{}vote
-    if not (p.config.vote.allow-anonymous or user.id) => return
-    obj = p.{}stand.[][user.id]
-    if k in obj => obj.splice obj.indexOf(k), 1 else =>
-      if p.config.vote.choice == \1 and obj.length > 0 => obj.pop!
-      obj.push k
-    $scope.list.$save!
 
 ctrl.plan = ($scope, DataService) ->
   $scope <<< ctrl.base $scope, DataService, \plan
-  $scope.purge = ->
-    pk = $scope.get(\plan, it)proposal
-    obj = (DataService.proposal.ref[pk] or {}).[]plan
-    if it in obj =>
-      obj.splice obj.indexOf(it),1
-      DataService.proposal.ref.$save!
-    $scope.delete it
 
 ctrl.comment = ($scope, DataService) ->
   $scope <<< ctrl.base $scope, DataService, \comment
 
 ctrl.issue = ($scope, DataService) ->
   $scope <<< ctrl.base $scope, DataService, \issue
+
+/*
+$scope.purge = ->
+  pk = $scope.get(\plan, it)proposal
+  obj = (DataService.proposal.ref[pk] or {}).[]plan
+  if it in obj =>
+    obj.splice obj.indexOf(it),1
+    DataService.proposal.ref.$save!
+  $scope.delete it
+*/

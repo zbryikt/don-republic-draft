@@ -59,25 +59,25 @@
         <div ng-controller="ctrl.issue" class="issue">
           <input type="text" placeholder="name" ng-model="cur.name">
           <input type="text" placeholder="desc" ng-model="cur.desc">
-          <button ng-click="createWith('proposal',k,p)">new</button>
+          <button ng-click="createWith('child','proposal',k,p)">new</button>
         </div>
-        <div ng-repeat="n in p.link['issue']|type:'issue'" ng-controller="ctrl.issue" class="issue"><span>{{get("issue",n.id).name}}</span><span>{{get("issue",n.id).desc}}</span><span ng-click="delete(n.id)">x</span></div>
+        <div ng-repeat="n in p.link['child']|type:'issue'" ng-controller="ctrl.issue" class="issue"><span>{{get("issue",n.id).name}}</span><span>{{get("issue",n.id).desc}}</span><span ng-click="delete(n.id)">x</span></div>
         <h5>picked</h5>
-        <div ng-repeat="s in p.link['choice']|type:'plan'|picked:p:true" ng-controller="ctrl.plan" class="plan"><span ng-click="pick(p, s.id)">{{get("plan",s.id).name}}<span ng-click="delete(s.id)">x</span></span></div>
+        <div ng-repeat="s in picked(p,true)" ng-controller="ctrl.plan" class="plan"><span ng-click="pick(p, s.id)">{{get("plan",s.id).name}}<span ng-click="delete(s.id)">x</span></span></div>
         <h5>not picked</h5>
         <div ng-repeat="s in p.link['choice']|type:'plan'|picked:p:false" ng-controller="ctrl.plan" class="plan"><span ng-click="pick(p, s.id)">{{get("plan",s.id).name}}<span ng-click="delete(s.id)">x</span></span></div>
         <div ng-controller="ctrl.plan" class="plan">
           <input type="text" placeholder="name" ng-model="cur.name">
           <input type="text" placeholder="desc" ng-model="cur.desc">
-          <button ng-click="createWith('proposal',k,p)">new</button>
+          <button ng-click="createWith('choice','proposal',k,p)">new</button>
         </div>
         <div ng-controller="ctrl.comment" class="comments">
           <div class="comment">
             <input type="text" ng-model="cur.desc" placeholder="leave comment">
-            <button ng-click="createUnder('proposal',k,p)">送出</button>
+            <button ng-click="createWith('comment','proposal',k,p)">送出</button>
           </div>
-          <div ng-repeat="c in p.comment" class="comment"> <span>{{get("comment",c).desc}}</span><span ng-click="deleteUnder(c, p)">x</span>
-            <div class="vote"><span ng-click="vote(get('comment',c),0)">up {{get("comment",c).vote[0].length}}</span><span ng-click="vote(get('comment',c),1)">neutral {{get("comment",c).vote[1].length}}</span><span ng-click="vote(get('comment',c),2)">down {{get("comment",c).vote[2].length}}</span></div>
+          <div ng-repeat="c in p.link['comment']" class="comment"> <span>{{get("comment",c.id).desc}}</span><span ng-click="delete(c.id, p)">x</span>
+            <div class="vote"><span ng-click="vote(get('comment',c.id),0)">up {{get("comment",c.id).vote[0].length}}</span><span ng-click="vote(get('comment',c.id),1)">neutral {{get("comment",c.id).vote[1].length}}</span><span ng-click="vote(get('comment',c.id),2)">down {{get("comment",c.id).vote[2].length}}</span></div>
           </div>
         </div>
       </div><span>title</span><span>description</span><span>creator</span><span>administrator</span><span>options</span><span>vision</span><span>question</span><span>cause</span><span>solution</span>
@@ -90,7 +90,7 @@
         <button ng-click="create()">new</button>
       </div>
       <div ng-repeat="(k,p) in list" class="plan">
-        <h4>{{p.name}}<span ng-click="purge(k)">x</span></h4>
+        <h4>{{p.name}}<span ng-click="delete(k)">x</span></h4>
         <div class="desc">
            
           {{p.desc}}
@@ -107,7 +107,7 @@
         <button ng-click="create()">new</button>
       </div>
       <div ng-repeat="(k,p) in list" class="issue">
-        <h4>{{p.name}}<span ng-click="purge(k)">x</span></h4>
+        <h4>{{p.name}}<span ng-click="delete(k)">x</span></h4>
         <div class="desc">
            
           {{p.desc}}

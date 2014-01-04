@@ -93,6 +93,20 @@
               <div class="title">摘要</div>
               <div contenteditable ng-model="p.desc" class="desc"></div>
             </div>
+            <h3>主要的問題</h3>
+            <div ng-controller="ctrl.issue" class="issues">
+              <div ng-repeat="n in p.link['child']|type:'issue'" class="issue">{{get("issue",n.id).name}}<i ng-click="delete(n.id)" class="glyphicon glyphicon-remove"></i></div>
+              <h5 ng-click="showNewIssue=true" ng-show="!showNewIssue" style="cursor: pointer">... 或新增問題</h5>
+              <div ng-show="showNewIssue" class="issue">
+                <form class="plan form-inline">
+                  <div class="form-group">
+                    <input type="text" placeholder="描述問題" ng-model="cur.name" class="form-control">
+                  </div>
+                  <button ng-click="createWith('child','proposal',k,p)" class="btn btn-success">新增</button>
+                  <button ng-click="showNewIssue=false" class="btn btn-default">取消</button>
+                </form>
+              </div>
+            </div>
             <h3>方案</h3>
             <div class="plans">
               <div class="row">

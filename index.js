@@ -224,14 +224,6 @@ ctrl.base = function($scope, DS, ctrlName){
       }, 1);
       return item;
     },
-    createUnder: function(type, id, ref){
-      var item;
-      $scope.cur[type] = id;
-      item = $scope.create();
-      console.log(ref);
-      (ref[ctrlName] || (ref[ctrlName] = [])).push(item.id);
-      return DS[type].ref.$save();
-    },
     'delete': function(key){
       var ref$, types, cat, links, i$, len$, des, obj, ret, it, results$ = [];
       if ((!DS.user && DS[ctrlName].ref[key].creator) || (DS.user && DS.user.id !== ((ref$ = DS[ctrlName].ref[key]).creator || (ref$.creator = {})).id)) {
@@ -267,14 +259,6 @@ ctrl.base = function($scope, DS, ctrlName){
       function fn1$(it){
         return it;
       }
-    },
-    deleteUnder: function(it, ref){
-      var obj;
-      obj = ref[ctrlName] || (ref[ctrlName] = []);
-      if (in$(it, obj)) {
-        obj.splice(obj.indexOf(it), 1);
-      }
-      return $scope['delete'](it);
     },
     get: function(type, id){
       return DS[type].ref[id] || {};
@@ -329,7 +313,36 @@ ctrl.base = function($scope, DS, ctrlName){
         return this$.get(it.t, it.id);
       });
     },
-    cur: DS[ctrlName].factory()
+    cur: DS[ctrlName].factory(),
+    picked: function(p, picked){
+      var stand, ref$, key$;
+      picked == null && (picked = true);
+      stand = (ref$ = p.stand || (p.stand = {}))[key$ = (DS.user || {}).id] || (ref$[key$] = []);
+      return ((ref$ = p.link || (p.link = {}))['choice'] || (ref$['choice'] = [])).filter(function(it){
+        var ref$, ref1$;
+        return !(ref$ = !picked) !== !(ref1$ = in$(it.id, stand)) && (ref$ || ref1$);
+      }).sort(function(a, b){
+        return stand.indexOf(a) - stand.indexOf(b);
+      });
+    },
+    pick: function(p, k){
+      var user, ref$, obj, key$;
+      user = DS.user || {};
+      (ref$ = p.config || (p.config = {})).vote || (ref$.vote = {});
+      if (!(p.config.vote.allowAnonymous || user.id)) {
+        return;
+      }
+      obj = (ref$ = p.stand || (p.stand = {}))[key$ = user.id] || (ref$[key$] = []);
+      if (in$(k, obj)) {
+        obj.splice(obj.indexOf(k), 1);
+      } else {
+        if (p.config.vote.choice === '1' && obj.length > 0) {
+          obj.pop();
+        }
+        obj.push(k);
+      }
+      return $scope.list.$save();
+    }
   };
 };
 ctrl.group = function($scope, DataService){
@@ -341,50 +354,10 @@ ctrl.group = function($scope, DataService){
   };
 };
 ctrl.proposal = function($scope, DataService){
-  import$($scope, ctrl.base($scope, DataService, 'proposal'));
-  $scope.picked = function(p, picked){
-    var user, stand, ref$, key$;
-    picked == null && (picked = true);
-    user = DataService.user || {};
-    stand = (ref$ = p.stand || (p.stand = {}))[key$ = user.id] || (ref$[key$] = []);
-    return (p.plan || (p.plan = [])).filter(function(it){
-      var ref$, ref1$;
-      return !(ref$ = !picked) !== !(ref1$ = in$(it, stand)) && (ref$ || ref1$);
-    }).sort(function(a, b){
-      return stand.indexOf(a) - stand.indexOf(b);
-    });
-  };
-  return $scope.pick = function(p, k){
-    var user, ref$, obj, key$;
-    user = DataService.user || {};
-    (ref$ = p.config || (p.config = {})).vote || (ref$.vote = {});
-    if (!(p.config.vote.allowAnonymous || user.id)) {
-      return;
-    }
-    obj = (ref$ = p.stand || (p.stand = {}))[key$ = user.id] || (ref$[key$] = []);
-    if (in$(k, obj)) {
-      obj.splice(obj.indexOf(k), 1);
-    } else {
-      if (p.config.vote.choice === '1' && obj.length > 0) {
-        obj.pop();
-      }
-      obj.push(k);
-    }
-    return $scope.list.$save();
-  };
+  return import$($scope, ctrl.base($scope, DataService, 'proposal'));
 };
 ctrl.plan = function($scope, DataService){
-  import$($scope, ctrl.base($scope, DataService, 'plan'));
-  return $scope.purge = function(it){
-    var pk, obj, ref$;
-    pk = $scope.get('plan', it).proposal;
-    obj = (ref$ = DataService.proposal.ref[pk] || {}).plan || (ref$.plan = []);
-    if (in$(it, obj)) {
-      obj.splice(obj.indexOf(it), 1);
-      DataService.proposal.ref.$save();
-    }
-    return $scope['delete'](it);
-  };
+  return import$($scope, ctrl.base($scope, DataService, 'plan'));
 };
 ctrl.comment = function($scope, DataService){
   return import$($scope, ctrl.base($scope, DataService, 'comment'));
@@ -392,6 +365,15 @@ ctrl.comment = function($scope, DataService){
 ctrl.issue = function($scope, DataService){
   return import$($scope, ctrl.base($scope, DataService, 'issue'));
 };
+/*
+$scope.purge = ->
+  pk = $scope.get(\plan, it)proposal
+  obj = (DataService.proposal.ref[pk] or {}).[]plan
+  if it in obj =>
+    obj.splice obj.indexOf(it),1
+    DataService.proposal.ref.$save!
+  $scope.delete it
+*/
 function in$(x, xs){
   var i = -1, l = xs.length >>> 0;
   while (++i < l) if (x === xs[i]) return true;

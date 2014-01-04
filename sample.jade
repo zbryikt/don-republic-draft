@@ -96,6 +96,18 @@ html(lang="en")
             .summary
               .title 摘要
               .desc(contenteditable,ng-model="p.desc")
+            h3 主要的問題
+            .issues(ng-controller="ctrl.issue")
+              .issue(ng-repeat="n in p.link['child']|type:'issue'")
+                | {{get("issue",n.id).name}}
+                i.glyphicon.glyphicon-remove(ng-click="delete(n.id)")
+              h5(ng-click="showNewIssue=true",ng-show="!showNewIssue",style="cursor: pointer") ... 或新增問題
+              .issue(ng-show="showNewIssue")
+                form.plan.form-inline
+                  .form-group: input.form-control(type="text",placeholder="描述問題",ng-model="cur.name")
+                  button.btn.btn-success(ng-click="createWith('child','proposal',k,p)") 新增
+                  button.btn.btn-default(ng-click="showNewIssue=false") 取消
+
             h3 方案
             .plans
               .row
@@ -110,9 +122,6 @@ html(lang="en")
                   .ib(ng-controller="ctrl.plan")
                     .plan(ng-repeat="s in p.link['choice']|type:'plan'|picked:p:true",ng-click="pick(p, s.id)") 
                       | {{get("plan",s.id).name}}
-                      .rank(ng-show="p.config.vote.choice==3") {{$index + 1}}
-                    //-.plan(ng-repeat="s in picked(p)",ng-click="pick(p, s)") 
-                      | {{get("plan",s).name}}
                       .rank(ng-show="p.config.vote.choice==3") {{$index + 1}}
 
               .panel(ng-show="false")
