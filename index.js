@@ -72,7 +72,7 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
   };
 }).filter('value', function(DataService){
   return function(d){
-    return d.map(function(it){
+    return (d || []).map(function(it){
       return it.v = DataService[it.t].ref[it.id], it;
     });
   };
@@ -118,14 +118,16 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
     });
     lk = [b, a].map(function(it){
       var ref$, ref1$;
-      return ref$ = (ref1$ = {}, ref1$.id = it.id, ref1$.t = it.t, ref1$), ref$.d = -dir * (2 * arguments[1] - 1), ref$.n = name, ref$;
+      return ref$ = (ref1$ = {}, ref1$.id = it.id, ref1$.t = it.t, ref1$), ref$.d = -dir * (2 * arguments[1] - 1), ref$;
     });
     ls.map(function(n, i){
-      if (['t', 'id', 'd', 'n'].map(function(it){
-        return n[it] === lk[i][it];
-      }).filter(function(it){
-        return !it;
-      }).length > 0) {
+      if (n.filter(function(m){
+        return ['t', 'id', 'd', 'n'].map(function(it){
+          return m[it] === lk[i][it];
+        }).filter(function(it){
+          return !it;
+        }).length === 0;
+      }).length === 0) {
         return n.push(lk[i]);
       }
     });
@@ -184,9 +186,11 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
       ref: $firebase(new Firebase("https://don.firebaseio.com/" + name)),
       create: function(it){
         var n, ref$, ref1$;
-        n = this.ref.$add((it.creator = (ref1$ = {}, ref1$.id = (ref$ = ret.user).id, ref1$.username = ref$.username, ref1$), it.create_time = new Date().getTime(), it), {
-          edit_time: new Date().getTime()
-        });
+        n = this.ref.$add((it.creator = (ref1$ = {}, ref1$.id = (ref$ = ret.user || {
+          id: 0,
+          username: 'anonymous',
+          displayName: 'anonymous'
+        }).id, ref1$.username = ref$.username, ref1$.displayName = ref$.displayName, ref1$), it.create_time = new Date().getTime(), it.edit_time = new Date().getTime(), it));
         it.id = n.name();
         ret.name.add(it.name, name, n.name(), 'name');
         return it;

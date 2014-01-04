@@ -30,7 +30,7 @@ angular.module 'main', <[firebase]>
       scope.handle = $timeout search, 350
 
 .filter \type, -> (d, type) -> (d or [])filter(-> it.t == type)
-.filter \value, (DataService) -> (d) -> d.map -> it <<<{v:DataService[it.t]ref[it.id]}
+.filter \value, (DataService) -> (d) -> (d or [])map -> it <<<{v:DataService[it.t]ref[it.id]}
 .filter \picked, (DataService) ->
   (d=[], p, picked=true) ->
     stand = p.{}stand.[][(DataService.user or {})id]
@@ -49,8 +49,8 @@ angular.module 'main', <[firebase]>
   # a and b: {t: \type, id: \id}
   ret.link = (cat, a, b, dir, name=null) ->
     ls = [a,b]map -> it.v.{}link.[][cat]
-    lk = [b,a]map -> {} <<< it{id,t} <<< {d: -dir * (2 * &1 - 1),n: name}
-    ls.map (n,i)-> if <[t id d n]>map(-> n[it]==lk[i][it])filter(->!it)length>0 => n.push lk[i]
+    lk = [b,a]map -> {} <<< it{id,t} <<< {d: -dir * (2 * &1 - 1)}
+    ls.map (n,i)-> if n.filter((m) -> <[t id d n]>map(-> m[it]==lk[i][it])filter(->!it)length==0)length==0 => n.push lk[i]
     [a,b]map (it,i) ->
       if not ret[it.t]ref[it.id] => ret[it.t]ref[it.id] = it.v
       else ret[it.t]ref[it.id].{}link[cat] = ls[i]
@@ -74,7 +74,7 @@ angular.module 'main', <[firebase]>
   base = (name) -> do
     ref: $firebase new Firebase "https://don.firebaseio.com/#{name}"
     create: ->
-      n = @ref.$add(it <<< {creator: {}<<<ret.user{id,username}, create_time: new Date!getTime!}, edit_time: new Date!getTime!)
+      n = @ref.$add(it <<< {creator: {}<<<(ret.user or {id:0,username:\anonymous,displayName:\anonymous}){id,username,displayName}, create_time: new Date!getTime!, edit_time: new Date!getTime!})
       it.id = n.name!
       ret.name.add it.name, name, n.name!, \name
       it
