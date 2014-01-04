@@ -102,13 +102,16 @@ html(lang="en")
                 .col-sm-6(style="border-right: 1px dashed #999")
                   .title 以下方案可供選擇：
                   .ib(ng-controller="ctrl.plan")
-                    .plan(ng-repeat="s in p.plan",ng-click="pick(p,s)")
-                      | {{get("plan",s).name}}
-                      i.glyphicon.glyphicon-remove(ng-click="purge(s)",ng-show="p.creator.id==user.id")
+                    .plan(ng-repeat="s in p.link['choice']|type:'plan'|picked:p:false",ng-click="pick(p,s.id)")
+                      | {{get("plan",s.id).name}}
+                      i.glyphicon.glyphicon-remove(ng-click="purge(s.id)",ng-show="p.creator.id==user.id")
                 .col-sm-6
                   .title 你選擇的方案
                   .ib(ng-controller="ctrl.plan")
-                    .plan(ng-repeat="s in picked(p)",ng-click="pick(p, s)") 
+                    .plan(ng-repeat="s in p.link['choice']|type:'plan'|picked:p:true",ng-click="pick(p, s.id)") 
+                      | {{get("plan",s.id).name}}
+                      .rank(ng-show="p.config.vote.choice==3") {{$index + 1}}
+                    //-.plan(ng-repeat="s in picked(p)",ng-click="pick(p, s)") 
                       | {{get("plan",s).name}}
                       .rank(ng-show="p.config.vote.choice==3") {{$index + 1}}
 
@@ -122,30 +125,30 @@ html(lang="en")
               form.plan.form-inline(ng-controller="ctrl.plan")
                 .form-group: input.form-control(type="text",placeholder="方案簡稱",ng-model="cur.name")
                 .form-group: input.form-control(type="text",placeholder="方案描述",ng-model="cur.desc")
-                button.btn.btn-success(ng-click="createUnder('proposal',k,p)") 新增
+                button.btn.btn-success(ng-click="createWith('choice','proposal',k,p)") 新增
             hr
             .comments(ng-controller="ctrl.comment")
               h3 留言
               .comment.form-inline
                 .form-group(style="width:50%"): input.form-control(type="text",ng-model="cur.desc",placeholder="...")
-                .btn.btn-success(ng-click="createUnder('proposal',k,p)") 送出
-              .comment(ng-repeat="c in p.comment") 
+                .btn.btn-success(ng-click="createWith('comment','proposal',k,p)") 送出
+              .comment(ng-repeat="c in p.link['comment']") 
                 .desc
-                  | {{get("comment",c).desc}}
+                  | {{get("comment",c.id).desc}}
                   .panel
                     .vote
-                      .btn(ng-click="vote(get('comment',c),0)")
+                      .btn(ng-click="vote(get('comment',c.id),0)")
                         i.glyphicon.glyphicon-chevron-up
-                        | {{get('comment',c).vote[0].length}}
-                      .btn(ng-click="vote(get('comment',c),1)")
+                        | {{get('comment',c.id).vote[0].length}}
+                      .btn(ng-click="vote(get('comment',c.id),1)")
                         i.glyphicon.glyphicon-minus
-                        | {{get('comment',c).vote[1].length}}
-                      .btn(ng-click="vote(get('comment',c),2)")
+                        | {{get('comment',c.id).vote[1].length}}
+                      .btn(ng-click="vote(get('comment',c.id),2)")
                         i.glyphicon.glyphicon-chevron-down
-                        | {{get('comment',c).vote[2].length}}
-                    .btn: i.glyphicon.glyphicon-remove(ng-click="deleteUnder(c,p)")
+                        | {{get('comment',c.id).vote[2].length}}
+                    .btn: i.glyphicon.glyphicon-remove(ng-click="delete(c.id,p)")
                     | by 
-                    i {{get("comment",c).creator.username || "anonymous"}}
+                    i {{get("comment",c.id).creator.username || "anonymous"}}
 
 
           div(ng-show="false")

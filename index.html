@@ -55,14 +55,21 @@
         <div contenteditable ng-model="p.desc" class="desc"></div>
         <div class="desc">config: {{p.config}}</div>
         <div class="vote"><span ng-click="vote(p,0)">up {{p.vote[0].length}}</span><span ng-click="vote(p,1)">neutral {{p.vote[1].length}}</span><span ng-click="vote(p,2)">down {{p.vote[2].length}}</span></div>
+        <h5>add issue</h5>
+        <div ng-controller="ctrl.issue" class="issue">
+          <input type="text" placeholder="name" ng-model="cur.name">
+          <input type="text" placeholder="desc" ng-model="cur.desc">
+          <button ng-click="createWith('proposal',k,p)">new</button>
+        </div>
+        <div ng-repeat="n in p.link['issue']|type:'issue'" ng-controller="ctrl.issue" class="issue"><span>{{get("issue",n.id).name}}</span><span>{{get("issue",n.id).desc}}</span><span ng-click="delete(n.id)">x</span></div>
         <h5>picked</h5>
-        <div ng-repeat="s in picked(p)" ng-controller="ctrl.plan" class="plan"><span ng-click="pick(p, s)">{{get("plan",s).name}}<span ng-click="purge(s)">x</span></span></div>
+        <div ng-repeat="s in p.link['choice']|type:'plan'|picked:p:true" ng-controller="ctrl.plan" class="plan"><span ng-click="pick(p, s.id)">{{get("plan",s.id).name}}<span ng-click="delete(s.id)">x</span></span></div>
         <h5>not picked</h5>
-        <div ng-repeat="s in picked(p,false)" ng-controller="ctrl.plan" class="plan"><span ng-click="pick(p, s)">{{get("plan",s).name}}<span ng-click="purge(s)">x</span></span></div>
+        <div ng-repeat="s in p.link['choice']|type:'plan'|picked:p:false" ng-controller="ctrl.plan" class="plan"><span ng-click="pick(p, s.id)">{{get("plan",s.id).name}}<span ng-click="delete(s.id)">x</span></span></div>
         <div ng-controller="ctrl.plan" class="plan">
           <input type="text" placeholder="name" ng-model="cur.name">
           <input type="text" placeholder="desc" ng-model="cur.desc">
-          <button ng-click="createUnder('proposal',k,p)">new</button>
+          <button ng-click="createWith('proposal',k,p)">new</button>
         </div>
         <div ng-controller="ctrl.comment" class="comments">
           <div class="comment">
@@ -83,6 +90,23 @@
         <button ng-click="create()">new</button>
       </div>
       <div ng-repeat="(k,p) in list" class="plan">
+        <h4>{{p.name}}<span ng-click="purge(k)">x</span></h4>
+        <div class="desc">
+           
+          {{p.desc}}
+        </div>
+        <div class="vote"><span ng-click="vote(p,0)">up {{p.vote[0].length}}</span><span ng-click="vote(p,1)">neutral {{p.vote[1].length}}</span><span ng-click="vote(p,2)">down {{p.vote[2].length}}</span></div>
+        <div class="desc">created by {{p.creator.username}}</div>
+      </div>
+    </div>
+    <h3>Issue</h3>
+    <div id="issue" ng-controller="ctrl.issue">
+      <div>new issue
+        <input type="text" placeholder="name" ng-model="cur.name">
+        <input type="text" placeholder="desc" ng-model="cur.desc">
+        <button ng-click="create()">new</button>
+      </div>
+      <div ng-repeat="(k,p) in list" class="issue">
         <h4>{{p.name}}<span ng-click="purge(k)">x</span></h4>
         <div class="desc">
            

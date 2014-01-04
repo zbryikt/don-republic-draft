@@ -17,6 +17,25 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
       });
     }
   };
+}).filter('type', function(){
+  return function(d, type){
+    return (d || []).filter(function(it){
+      return it.t === type;
+    });
+  };
+}).filter('picked', function(DataService){
+  return function(d, p, picked){
+    var stand, ref$, key$;
+    d == null && (d = []);
+    picked == null && (picked = true);
+    stand = (ref$ = p.stand || (p.stand = {}))[key$ = (DataService.user || {}).id] || (ref$[key$] = []);
+    return d.filter(function(it){
+      var ref$, ref1$;
+      return !(ref$ = !picked) !== !(ref1$ = in$(it.id, stand)) && (ref$ || ref1$);
+    }).sort(function(a, b){
+      return stand.indexOf(a) - stand.indexOf(b);
+    });
+  };
 }).factory('DataService', function($firebase){
   var ret, base;
   ret = {};
@@ -24,18 +43,50 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
   ret.dbRef = new Firebase('https://don.firebaseio.com');
   ret.firebase = $firebase(ret.dbRef);
   ret.auth = new FirebaseSimpleLogin(ret.dbRef, function(e, u){
-    var i$, ref$, len$, f;
+    var i$, ref$, len$, f, results$ = [];
+    ret.user = u;
     for (i$ = 0, len$ = (ref$ = ret.handle['user.changed']).length; i$ < len$; ++i$) {
       f = ref$[i$];
-      f(u);
+      results$.push(f(u));
     }
-    ret.user = u;
-    return console.log(u);
+    return results$;
   });
   ret.handle = {};
   ret.on = function(n, f){
     var ref$;
     return ((ref$ = ret.handle)[n] || (ref$[n] = [])).push(f);
+  };
+  ret.link = function(cat, a, b, dir, name){
+    var ls, lk;
+    name == null && (name = null);
+    ls = [a, b].map(function(it){
+      var ref$, ref1$;
+      return (ref$ = (ref1$ = it.v).link || (ref1$.link = {}))[cat] || (ref$[cat] = []);
+    });
+    lk = [b, a].map(function(it){
+      var ref$, ref1$;
+      return ref$ = (ref1$ = {}, ref1$.id = it.id, ref1$.t = it.t, ref1$), ref$.d = dir * (2 * arguments[1] - 1), ref$.n = name, ref$;
+    });
+    ls.map(function(n, i){
+      if (['t', 'id', 'd', 'n'].map(function(it){
+        return n[it] === lk[i][it];
+      }).filter(function(it){
+        return !it;
+      }).length > 0) {
+        return n.push(lk[i]);
+      }
+    });
+    [a, b].map(function(it, i){
+      var ref$;
+      if (!ret[it.t].ref[it.id]) {
+        return ret[it.t].ref[it.id] = it.v;
+      } else {
+        return ((ref$ = ret[it.t].ref[it.id]).link || (ref$.link = {}))[cat] = ls[i];
+      }
+    });
+    return [a, b].map(function(it){
+      return ret[it.t].ref.$save();
+    });
   };
   ret.name = {
     ref: $firebase(new Firebase('https://don.firebaseio.com/name')),
@@ -81,8 +132,9 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
       create: function(it){
         var n;
         n = this.ref.$add((it.creator = ret.user, it.create_time = new Date().getTime(), it));
+        it.id = n.name();
         ret.name.add(it.name, name, n.name(), 'name');
-        return n;
+        return it;
       },
       factory: function(){
         return {};
@@ -94,6 +146,7 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
   ret.proposal = base('proposal');
   ret.plan = base('plan');
   ret.comment = base('comment');
+  ret.issue = base('issue');
   return ret;
 });
 ctrl = {};
@@ -157,20 +210,63 @@ ctrl.base = function($scope, DS, ctrlName){
       $scope.cur = DS[ctrlName].factory();
       return ret;
     },
+    createWith: function(cat, type, id, ref){
+      var item;
+      item = $scope.create();
+      DS.link(cat, {
+        id: id,
+        t: type,
+        v: ref
+      }, {
+        t: ctrlName,
+        id: item.id,
+        v: item
+      }, 1);
+      return item;
+    },
     createUnder: function(type, id, ref){
       var item;
       $scope.cur[type] = id;
       item = $scope.create();
       console.log(ref);
-      (ref[ctrlName] || (ref[ctrlName] = [])).push(item.name());
+      (ref[ctrlName] || (ref[ctrlName] = [])).push(item.id);
       return DS[type].ref.$save();
     },
-    'delete': function(it){
-      var ref$;
-      if ((!DS.user && DS[ctrlName].ref[it].creator) || (DS.user && DS.user.id !== ((ref$ = DS[ctrlName].ref[it]).creator || (ref$.creator = {})).id)) {
+    'delete': function(key){
+      var ref$, types, cat, links, i$, len$, des, obj, ret, it, results$ = [];
+      if ((!DS.user && DS[ctrlName].ref[key].creator) || (DS.user && DS.user.id !== ((ref$ = DS[ctrlName].ref[key]).creator || (ref$.creator = {})).id)) {
         return;
       }
-      return DS[ctrlName].ref.$remove(it);
+      types = {};
+      for (cat in ref$ = DS[ctrlName].ref[key].link) {
+        links = ref$[cat];
+        for (i$ = 0, len$ = links.length; i$ < len$; ++i$) {
+          des = links[i$];
+          obj = this.get(des.t, des.id);
+          ret = obj.link[cat].map(fn$).filter(fn1$);
+          if (ret.length !== obj.link[cat]) {
+            obj.link[cat] = ret;
+            types[des.t] = 1;
+          }
+        }
+      }
+      DS[ctrlName].ref.$remove(key);
+      for (it in types) {
+        if (it !== ctrlName) {
+          results$.push(DS[it].ref.$save());
+        }
+      }
+      return results$;
+      function fn$(d, i){
+        if (d.id === key) {
+          return null;
+        } else {
+          return d;
+        }
+      }
+      function fn1$(it){
+        return it;
+      }
     },
     deleteUnder: function(it, ref){
       var obj;
@@ -180,8 +276,8 @@ ctrl.base = function($scope, DS, ctrlName){
       }
       return $scope['delete'](it);
     },
-    get: function(name, id){
-      return DS[name].ref[id] || {};
+    get: function(type, id){
+      return DS[type].ref[id] || {};
     },
     vote: function(p, d){
       var id, that, ref$, it;
@@ -220,6 +316,19 @@ ctrl.base = function($scope, DS, ctrlName){
       return DS[ctrlName].ref.$save();
     },
     list: DS[ctrlName].ref,
+    links: function(p, cat, type){
+      var ret, this$ = this;
+      type == null && (type = null);
+      ret = (p.link || (p.link = {}))[cat] || [];
+      if (type) {
+        ret = ret.filter(function(it){
+          return it.t === type;
+        });
+      }
+      return ret.map(function(it){
+        return this$.get(it.t, it.id);
+      });
+    },
     cur: DS[ctrlName].factory()
   };
 };
@@ -280,13 +389,16 @@ ctrl.plan = function($scope, DataService){
 ctrl.comment = function($scope, DataService){
   return import$($scope, ctrl.base($scope, DataService, 'comment'));
 };
-function import$(obj, src){
-  var own = {}.hasOwnProperty;
-  for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-  return obj;
-}
+ctrl.issue = function($scope, DataService){
+  return import$($scope, ctrl.base($scope, DataService, 'issue'));
+};
 function in$(x, xs){
   var i = -1, l = xs.length >>> 0;
   while (++i < l) if (x === xs[i]) return true;
   return false;
+}
+function import$(obj, src){
+  var own = {}.hasOwnProperty;
+  for (var key in src) if (own.call(src, key)) obj[key] = src[key];
+  return obj;
 }

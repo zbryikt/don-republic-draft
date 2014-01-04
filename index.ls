@@ -5,17 +5,31 @@ angular.module 'main', <[firebase]>
   link: (scope, e, attrs, ctrl) ->
     e.on \keyup, -> scope.$apply -> scope.ng-model = e.html!
     scope.$watch 'ngModel', -> e.html scope.ng-model
+.filter \type, -> (d, type) -> (d or [])filter(-> it.t == type)
+.filter \picked, (DataService) ->
+  (d=[], p, picked=true) ->
+    stand = p.{}stand.[][(DataService.user or {})id]
+    d.filter(-> !picked xor (it.id in stand))sort (a,b) -> stand.indexOf(a) - stand.indexOf(b)
 .factory \DataService, ($firebase) ->
   ret = {}
   ret.user = null
   ret.db-ref = new Firebase \https://don.firebaseio.com
   ret.firebase = $firebase ret.db-ref
   ret.auth = new FirebaseSimpleLogin ret.db-ref, (e,u) ->
-    for f in ret.handle[\user.changed] => f u
     ret.user = u
-    console.log u
+    for f in ret.handle[\user.changed] => f u
   ret.handle = {}
   ret.on = (n,f) -> ret.handle.[][n].push f
+
+  # a and b: {t: \type, id: \id}
+  ret.link = (cat, a, b, dir, name=null) ->
+    ls = [a,b]map -> it.v.{}link.[][cat]
+    lk = [b,a]map -> {} <<< it{id,t} <<< {d: dir * (2 * &1 - 1),n: name}
+    ls.map (n,i)-> if <[t id d n]>map(-> n[it]==lk[i][it])filter(->!it)length>0 => n.push lk[i]
+    [a,b]map (it,i) ->
+      if not ret[it.t]ref[it.id] => ret[it.t]ref[it.id] = it.v
+      else ret[it.t]ref[it.id].{}link[cat] = ls[i]
+    [a,b]map -> ret[it.t]ref.$save!
 
   ret.name = do
     ref: $firebase new Firebase \https://don.firebaseio.com/name
@@ -36,8 +50,10 @@ angular.module 'main', <[firebase]>
     ref: $firebase new Firebase "https://don.firebaseio.com/#{name}"
     create: ->
       n = @ref.$add(it <<< {creator: ret.user, create_time: new Date!getTime!})
+      it.id = n.name!
       ret.name.add it.name, name, n.name!, \name
-      n
+      it
+
     factory: -> {}
 
   ret.user = base \user
@@ -45,6 +61,7 @@ angular.module 'main', <[firebase]>
   ret.proposal = base \proposal
   ret.plan = base \plan
   ret.comment = base \comment
+  ret.issue = base \issue
 
   ret
 
@@ -55,8 +72,7 @@ ctrl.main = ($scope, DataService) ->
 ctrl.user = ($scope,DataService) ->
   $scope <<< ctrl.base $scope, DataService, \user
   $scope <<<
-    login: ->
-      DataService.auth.login \facebook
+    login: -> DataService.auth.login \facebook
     logout: -> DataService.auth.logout \facebook
   DataService.on \user.changed, (u) ->
     $scope.$apply -> $scope.cur = u
@@ -81,20 +97,34 @@ ctrl.base = ($scope, DS, ctrl-name) -> do
     ret = DS[ctrl-name]create $scope.cur
     $scope.cur = DS[ctrl-name]factory!
     ret
+  create-with: (cat, type, id, ref) ->
+    item = $scope.create!
+    DS.link cat, {id,t:type,v:ref}, {t:ctrl-name,id:item.id,v:item}, 1
+    item
+
   create-under: (type, id, ref) ->
     $scope.cur[type] = id
     item = $scope.create!
     console.log ref
-    ref.[][ctrl-name].push item.name!
+    ref.[][ctrl-name].push item.id
     DS[type]ref.$save!
-  delete: ->
-    if (!DS.user and DS[ctrl-name]ref[it]creator) or (DS.user and DS.user.id != DS[ctrl-name]ref[it].{}creator.id) => return
-    DS[ctrl-name]ref.$remove(it)
+  delete: (key) ->
+    if (!DS.user and DS[ctrl-name]ref[key]creator) or (DS.user and DS.user.id != DS[ctrl-name]ref[key].{}creator.id) => return
+    types = {}
+    for cat,links of DS[ctrl-name]ref[key]link
+      for des in links
+        obj = @get(des.t, des.id)
+        ret = obj.link[cat]map((d,i) -> if d.id==key => null else d)filter(->it)
+        if ret.length != obj.link[cat] =>
+          obj.link[cat] = ret
+          types[des.t] = 1
+    DS[ctrl-name]ref.$remove(key)
+    for it of types => if it!=ctrl-name => DS[it]ref.$save!
   delete-under: (it, ref) ->
     obj = ref.[][ctrl-name]
     if it in obj => obj.splice obj.indexOf(it), 1
     $scope.delete it
-  get: (name, id) -> DS[name]ref[id] or {}
+  get: (type, id) -> DS[type]ref[id] or {}
   vote: (p,d) ->
     #if not (id = if DS.user => that.id) => return
     id = if DS.user => that.id else 0
@@ -109,6 +139,10 @@ ctrl.base = ($scope, DS, ctrl-name) -> do
     $scope.list.$save!
   save: (k) -> DS[ctrl-name]ref.$save!
   list: DS[ctrl-name]ref
+  links: (p, cat, type=null) ->
+    ret = p.{}link[cat] or []
+    if type => ret = ret.filter -> it.t == type
+    ret.map ~> @get it.t, it.id
   cur: DS[ctrl-name]factory!
 
 ctrl.group = ($scope, DataService) ->
@@ -146,3 +180,6 @@ ctrl.plan = ($scope, DataService) ->
 
 ctrl.comment = ($scope, DataService) ->
   $scope <<< ctrl.base $scope, DataService, \comment
+
+ctrl.issue = ($scope, DataService) ->
+  $scope <<< ctrl.base $scope, DataService, \issue

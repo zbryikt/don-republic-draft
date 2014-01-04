@@ -99,15 +99,15 @@
                 <div style="border-right: 1px dashed #999" class="col-sm-6">
                   <div class="title">以下方案可供選擇：</div>
                   <div ng-controller="ctrl.plan" class="ib">
-                    <div ng-repeat="s in p.plan" ng-click="pick(p,s)" class="plan">{{get("plan",s).name}}<i ng-click="purge(s)" ng-show="p.creator.id==user.id" class="glyphicon glyphicon-remove"></i></div>
+                    <div ng-repeat="s in p.link['choice']|type:'plan'|picked:p:false" ng-click="pick(p,s.id)" class="plan">{{get("plan",s.id).name}}<i ng-click="purge(s.id)" ng-show="p.creator.id==user.id" class="glyphicon glyphicon-remove"></i></div>
                   </div>
                 </div>
                 <div class="col-sm-6">
                   <div class="title">你選擇的方案</div>
                   <div ng-controller="ctrl.plan" class="ib">
-                    <div ng-repeat="s in picked(p)" ng-click="pick(p, s)" class="plan">
+                    <div ng-repeat="s in p.link['choice']|type:'plan'|picked:p:true" ng-click="pick(p, s.id)" class="plan">
                        
-                      {{get("plan",s).name}}
+                      {{get("plan",s.id).name}}
                       <div ng-show="p.config.vote.choice==3" class="rank">{{$index + 1}}</div>
                     </div>
                   </div>
@@ -125,7 +125,7 @@
                 <div class="form-group">
                   <input type="text" placeholder="方案描述" ng-model="cur.desc" class="form-control">
                 </div>
-                <button ng-click="createUnder('proposal',k,p)" class="btn btn-success">新增</button>
+                <button ng-click="createWith('choice','proposal',k,p)" class="btn btn-success">新增</button>
               </form>
             </div>
             <hr>
@@ -135,17 +135,17 @@
                 <div style="width:50%" class="form-group">
                   <input type="text" ng-model="cur.desc" placeholder="..." class="form-control">
                 </div>
-                <div ng-click="createUnder('proposal',k,p)" class="btn btn-success">送出</div>
+                <div ng-click="createWith('comment','proposal',k,p)" class="btn btn-success">送出</div>
               </div>
-              <div ng-repeat="c in p.comment" class="comment"> 
-                <div class="desc">{{get("comment",c).desc}}
+              <div ng-repeat="c in p.link['comment']" class="comment"> 
+                <div class="desc">{{get("comment",c.id).desc}}
                   <div class="panel">
                     <div class="vote">
-                      <div ng-click="vote(get('comment',c),0)" class="btn"><i class="glyphicon glyphicon-chevron-up"></i>{{get('comment',c).vote[0].length}}</div>
-                      <div ng-click="vote(get('comment',c),1)" class="btn"><i class="glyphicon glyphicon-minus"></i>{{get('comment',c).vote[1].length}}</div>
-                      <div ng-click="vote(get('comment',c),2)" class="btn"><i class="glyphicon glyphicon-chevron-down"></i>{{get('comment',c).vote[2].length}}</div>
+                      <div ng-click="vote(get('comment',c.id),0)" class="btn"><i class="glyphicon glyphicon-chevron-up"></i>{{get('comment',c.id).vote[0].length}}</div>
+                      <div ng-click="vote(get('comment',c.id),1)" class="btn"><i class="glyphicon glyphicon-minus"></i>{{get('comment',c.id).vote[1].length}}</div>
+                      <div ng-click="vote(get('comment',c.id),2)" class="btn"><i class="glyphicon glyphicon-chevron-down"></i>{{get('comment',c.id).vote[2].length}}</div>
                     </div>
-                    <div class="btn"><i ng-click="deleteUnder(c,p)" class="glyphicon glyphicon-remove"></i></div>by <i>{{get("comment",c).creator.username || "anonymous"}}</i>
+                    <div class="btn"><i ng-click="delete(c.id,p)" class="glyphicon glyphicon-remove"></i></div>by <i>{{get("comment",c.id).creator.username || "anonymous"}}</i>
                   </div>
                 </div>
               </div>
