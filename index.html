@@ -55,17 +55,28 @@
         <div contenteditable ng-model="p.desc" class="desc"></div>
         <div class="desc">config: {{p.config}}</div>
         <div class="vote"><span ng-click="vote(p,0)">up {{p.vote[0].length}}</span><span ng-click="vote(p,1)">neutral {{p.vote[1].length}}</span><span ng-click="vote(p,2)">down {{p.vote[2].length}}</span></div>
+        <h5>add vision</h5>
+        <div ng-controller="ctrl.vision" class="vision">
+          <input type="text" placeholder="name" ng-model="cur.name">
+          <input type="text" placeholder="desc" ng-model="cur.desc">
+          <button ng-click="createWith('child','proposal',k,p)">new</button>
+        </div>
+        <div ng-repeat="n in p.link['child']|type:'vision'|value" ng-controller="ctrl.vision" class="vision"><span>{{n.v.name}}</span><span>{{n.v.desc}}</span><span ng-click="delete(n.id)">x</span>
+          <chooser ng-model="chosen"></chooser>
+          <button ng-click="link('link',n.id,chosen.t,chosen.id,chosen.v,1)">link</button>related issue
+          <div ng-repeat="i in n.v.link['link']|type:'issue'|value" ng-controller="ctrl.issue" class="issue"><span>{{i.v.name}}</span></div>
+        </div>
         <h5>add issue</h5>
         <div ng-controller="ctrl.issue" class="issue">
           <input type="text" placeholder="name" ng-model="cur.name">
           <input type="text" placeholder="desc" ng-model="cur.desc">
           <button ng-click="createWith('child','proposal',k,p)">new</button>
         </div>
-        <div ng-repeat="n in p.link['child']|type:'issue'" ng-controller="ctrl.issue" class="issue"><span>{{get("issue",n.id).name}}</span><span>{{get("issue",n.id).desc}}</span><span ng-click="delete(n.id)">x</span></div>
+        <div ng-repeat="n in p.link['child']|type:'issue'|value" ng-controller="ctrl.issue" class="issue"><span>{{n.v.name}}</span><span>{{n.v.desc}}</span><span ng-click="delete(n.id)">x</span></div>
         <h5>picked</h5>
         <div ng-repeat="s in picked(p,true)" ng-controller="ctrl.plan" class="plan"><span ng-click="pick(p, s.id)">{{get("plan",s.id).name}}<span ng-click="delete(s.id)">x</span></span></div>
         <h5>not picked</h5>
-        <div ng-repeat="s in p.link['choice']|type:'plan'|picked:p:false" ng-controller="ctrl.plan" class="plan"><span ng-click="pick(p, s.id)">{{get("plan",s.id).name}}<span ng-click="delete(s.id)">x</span></span></div>
+        <div ng-repeat="s in picked(p,false)" ng-controller="ctrl.plan" class="plan"><span ng-click="pick(p, s.id)">{{get("plan",s.id).name}}<span ng-click="delete(s.id)">x</span></span></div>
         <div ng-controller="ctrl.plan" class="plan">
           <input type="text" placeholder="name" ng-model="cur.name">
           <input type="text" placeholder="desc" ng-model="cur.desc">
@@ -76,8 +87,8 @@
             <input type="text" ng-model="cur.desc" placeholder="leave comment">
             <button ng-click="createWith('comment','proposal',k,p)">送出</button>
           </div>
-          <div ng-repeat="c in p.link['comment']" class="comment"> <span>{{get("comment",c.id).desc}}</span><span ng-click="delete(c.id, p)">x</span>
-            <div class="vote"><span ng-click="vote(get('comment',c.id),0)">up {{get("comment",c.id).vote[0].length}}</span><span ng-click="vote(get('comment',c.id),1)">neutral {{get("comment",c.id).vote[1].length}}</span><span ng-click="vote(get('comment',c.id),2)">down {{get("comment",c.id).vote[2].length}}</span></div>
+          <div ng-repeat="c in p.link['comment']|value" class="comment"> <span>{{get("comment",c.id).desc}}</span><span ng-click="delete(c.id, p)">x</span>
+            <div class="vote"><span ng-click="vote(c.v,0)">up {{c.v.vote[0].length}}</span><span ng-click="vote(c.v,1)">neutral {{c.v.vote[1].length}}</span><span ng-click="vote(c.v,2)">down {{c.v.vote[2].length}}</span></div>
           </div>
         </div>
       </div><span>title</span><span>description</span><span>creator</span><span>administrator</span><span>options</span><span>vision</span><span>question</span><span>cause</span><span>solution</span>
@@ -117,7 +128,9 @@
       </div>
     </div>
     <h3>Names</h3>
-    <div id="names" ng-controller="ctrl.name">
+    <div id="names" ng-controller="ctrl.name">{{blah}}
+      <chooser ng-model="blah"></chooser>
+      <hr>
       <input type="text" placholder="find a name..." ng-model="keyword">{{keyword}}
       <div ng-repeat="v in result" class="names">
         <h4>{{v.name}}</h4>

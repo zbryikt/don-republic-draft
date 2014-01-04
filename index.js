@@ -17,10 +17,63 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
       });
     }
   };
+}).directive('chooser', function(DataService, $timeout){
+  return {
+    require: 'ngModel',
+    scope: {
+      ngModel: '='
+    },
+    restrict: 'E',
+    replace: false,
+    template: "<input ng-model='keyword'/>" + "<div ng-repeat='g in result' class='group'>" + "<div ng-repeat='i in g.list' class='item' ng-click='choose(g,i)'>" + "<div class='type'>{{i.type}}</div><div class='name'>{{g.name}}</div>" + "</div></div>",
+    transclude: true,
+    link: function(scope, e, attrs, ctrl){
+      var search;
+      scope.data = DataService.name.ref;
+      scope.ngModel = {};
+      scope.choose = function(g, i){
+        var ref$;
+        return ref$ = scope.ngModel, ref$.t = i.type, ref$.id = i.id, ref$.v = DataService[i.type].ref[i.id], ref$;
+      };
+      search = function(){
+        var k;
+        scope.result = !scope.keyword
+          ? []
+          : (function(){
+            var results$ = [];
+            for (k in scope.data.n) {
+              results$.push(k);
+            }
+            return results$;
+          }()).filter(function(it){
+            return it.indexOf(scope.keyword) >= 0;
+          }).map(function(it){
+            DataService.name.prune(it);
+            return {
+              name: it,
+              list: scope.data.n[it]
+            };
+          });
+        return scope.handle = null;
+      };
+      return scope.$watch("keyword", function(v){
+        if (scope.handle) {
+          $timeout.cancel(scope.handle);
+        }
+        return scope.handle = $timeout(search, 350);
+      });
+    }
+  };
 }).filter('type', function(){
   return function(d, type){
     return (d || []).filter(function(it){
       return it.t === type;
+    });
+  };
+}).filter('value', function(DataService){
+  return function(d){
+    return d.map(function(it){
+      return it.v = DataService[it.t].ref[it.id], it;
     });
   };
 }).filter('picked', function(DataService){
@@ -65,7 +118,7 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
     });
     lk = [b, a].map(function(it){
       var ref$, ref1$;
-      return ref$ = (ref1$ = {}, ref1$.id = it.id, ref1$.t = it.t, ref1$), ref$.d = dir * (2 * arguments[1] - 1), ref$.n = name, ref$;
+      return ref$ = (ref1$ = {}, ref1$.id = it.id, ref1$.t = it.t, ref1$), ref$.d = -dir * (2 * arguments[1] - 1), ref$.n = name, ref$;
     });
     ls.map(function(n, i){
       if (['t', 'id', 'd', 'n'].map(function(it){
@@ -112,7 +165,7 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
       this.ref.n[n] = ((ref$ = this.ref.n)[n] || (ref$[n] = [])).map(function(it){
         var e;
         try {
-          if (ret[it.type][it.id][it.field] !== n) {
+          if (ret[it.type].ref[it.id][it.field] !== n) {
             throw 'changed';
           }
         } catch (e$) {
@@ -130,8 +183,10 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
     return {
       ref: $firebase(new Firebase("https://don.firebaseio.com/" + name)),
       create: function(it){
-        var n;
-        n = this.ref.$add((it.creator = ret.user, it.create_time = new Date().getTime(), it));
+        var n, ref$, ref1$;
+        n = this.ref.$add((it.creator = (ref1$ = {}, ref1$.id = (ref$ = ret.user).id, ref1$.username = ref$.username, ref1$), it.create_time = new Date().getTime(), it), {
+          edit_time: new Date().getTime()
+        });
         it.id = n.name();
         ret.name.add(it.name, name, n.name(), 'name');
         return it;
@@ -146,6 +201,7 @@ angular.module('main', ['firebase']).directive('contenteditable', function(){
   ret.proposal = base('proposal');
   ret.plan = base('plan');
   ret.comment = base('comment');
+  ret.vision = base('vision');
   ret.issue = base('issue');
   return ret;
 });
@@ -224,6 +280,18 @@ ctrl.base = function($scope, DS, ctrlName){
       }, 1);
       return item;
     },
+    link: function(cat, a, type, id, ref, dir){
+      dir == null && (dir = 1);
+      return DS.link(cat, {
+        id: a,
+        t: ctrlName,
+        v: this.get(ctrlName, a)
+      }, {
+        t: type,
+        id: id,
+        v: ref
+      }, dir);
+    },
     'delete': function(key){
       var ref$, types, cat, links, i$, len$, des, obj, ret, it, results$ = [];
       if ((!DS.user && DS[ctrlName].ref[key].creator) || (DS.user && DS.user.id !== ((ref$ = DS[ctrlName].ref[key]).creator || (ref$.creator = {})).id)) {
@@ -297,6 +365,7 @@ ctrl.base = function($scope, DS, ctrlName){
       return $scope.list.$save();
     },
     save: function(k){
+      (DS[ctrlName].ref[k] || {}).edit_time = new Date().getTime();
       return DS[ctrlName].ref.$save();
     },
     list: DS[ctrlName].ref,
@@ -362,18 +431,12 @@ ctrl.plan = function($scope, DataService){
 ctrl.comment = function($scope, DataService){
   return import$($scope, ctrl.base($scope, DataService, 'comment'));
 };
+ctrl.vision = function($scope, DataService){
+  return import$($scope, ctrl.base($scope, DataService, 'vision'));
+};
 ctrl.issue = function($scope, DataService){
   return import$($scope, ctrl.base($scope, DataService, 'issue'));
 };
-/*
-$scope.purge = ->
-  pk = $scope.get(\plan, it)proposal
-  obj = (DataService.proposal.ref[pk] or {}).[]plan
-  if it in obj =>
-    obj.splice obj.indexOf(it),1
-    DataService.proposal.ref.$save!
-  $scope.delete it
-*/
 function in$(x, xs){
   var i = -1, l = xs.length >>> 0;
   while (++i < l) if (x === xs[i]) return true;

@@ -76,24 +76,39 @@ html(lang="en")
           span(ng-click="vote(p,0)") up {{p.vote[0].length}}
           span(ng-click="vote(p,1)") neutral {{p.vote[1].length}}
           span(ng-click="vote(p,2)") down {{p.vote[2].length}}
+
+        h5 add vision
+        .vision(ng-controller="ctrl.vision")
+          input(type="text",placeholder="name", ng-model="cur.name")
+          input(type="text",placeholder="desc", ng-model="cur.desc")
+          button(ng-click="createWith('child','proposal',k,p)") new
+        .vision(ng-repeat="n in p.link['child']|type:'vision'|value",ng-controller="ctrl.vision")
+          span {{n.v.name}}
+          span {{n.v.desc}}
+          span(ng-click="delete(n.id)") x
+          chooser(ng-model="chosen")
+          button(ng-click="link('link',n.id,chosen.t,chosen.id,chosen.v,1)") link
+          | related issue
+          .issue(ng-repeat="i in n.v.link['link']|type:'issue'|value",ng-controller="ctrl.issue")
+            span {{i.v.name}}
+
         h5 add issue
         .issue(ng-controller="ctrl.issue")
           input(type="text",placeholder="name", ng-model="cur.name")
           input(type="text",placeholder="desc", ng-model="cur.desc")
           button(ng-click="createWith('child','proposal',k,p)") new
-        .issue(ng-repeat="n in p.link['child']|type:'issue'",ng-controller="ctrl.issue")
-          span {{get("issue",n.id).name}}
-          span {{get("issue",n.id).desc}}
+        .issue(ng-repeat="n in p.link['child']|type:'issue'|value",ng-controller="ctrl.issue")
+          span {{n.v.name}}
+          span {{n.v.desc}}
           span(ng-click="delete(n.id)") x
-        
+
         h5 picked
-        //-.plan(ng-repeat="s in p.link['choice']|type:'plan'|picked:p:true",ng-controller="ctrl.plan")
         .plan(ng-repeat="s in picked(p,true)",ng-controller="ctrl.plan")
           span(ng-click="pick(p, s.id)")
             | {{get("plan",s.id).name}}
             span(ng-click="delete(s.id)") x
         h5 not picked
-        .plan(ng-repeat="s in p.link['choice']|type:'plan'|picked:p:false",ng-controller="ctrl.plan")
+        .plan(ng-repeat="s in picked(p,false)",ng-controller="ctrl.plan")
           span(ng-click="pick(p, s.id)")
             | {{get("plan",s.id).name}}
             span(ng-click="delete(s.id)") x
@@ -105,13 +120,13 @@ html(lang="en")
           .comment
             input(type="text",ng-model="cur.desc",placeholder="leave comment")
             button(ng-click="createWith('comment','proposal',k,p)") 送出
-          .comment(ng-repeat="c in p.link['comment']") 
+          .comment(ng-repeat="c in p.link['comment']|value") 
             span {{get("comment",c.id).desc}}
             span(ng-click="delete(c.id, p)") x
             .vote
-              span(ng-click="vote(get('comment',c.id),0)") up {{get("comment",c.id).vote[0].length}}
-              span(ng-click="vote(get('comment',c.id),1)") neutral {{get("comment",c.id).vote[1].length}}
-              span(ng-click="vote(get('comment',c.id),2)") down {{get("comment",c.id).vote[2].length}}
+              span(ng-click="vote(c.v,0)") up {{c.v.vote[0].length}}
+              span(ng-click="vote(c.v,1)") neutral {{c.v.vote[1].length}}
+              span(ng-click="vote(c.v,2)") down {{c.v.vote[2].length}}
       span title
       span description
       span creator
@@ -162,6 +177,9 @@ html(lang="en")
 
     h3 Names
     #names(ng-controller="ctrl.name")
+      | {{blah}}
+      chooser(ng-model="blah")
+      hr
       input(type="text",placholder="find a name...",ng-model="keyword")
       | {{keyword}}
       .names(ng-repeat="v in result")

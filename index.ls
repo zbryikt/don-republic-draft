@@ -5,7 +5,32 @@ angular.module 'main', <[firebase]>
   link: (scope, e, attrs, ctrl) ->
     e.on \keyup, -> scope.$apply -> scope.ng-model = e.html!
     scope.$watch 'ngModel', -> e.html scope.ng-model
+.directive \chooser, (DataService, $timeout) ->
+  require: \ngModel
+  scope: ngModel: \=
+  restrict: \E,
+  replace: false,
+  template: "<input ng-model='keyword'/>" +
+            "<div ng-repeat='g in result' class='group'>" +
+            "<div ng-repeat='i in g.list' class='item' ng-click='choose(g,i)'>" +
+            "<div class='type'>{{i.type}}</div><div class='name'>{{g.name}}</div>" +
+            "</div></div>"
+  transclude: true
+  link: (scope, e, attrs, ctrl) ->
+    scope.data = DataService.name.ref
+    scope.ngModel = {}
+    scope.choose = (g,i)-> scope.ngModel <<< {t:i.type,id:i.id,v:DataService[i.type]ref[i.id]}
+    search = ->
+      scope.result = if !scope.keyword => [] else [k for k of scope.data.n]filter(->it.indexOf(scope.keyword)>=0)map ->
+        DataService.name.prune it
+        {name: it, list: scope.data.n[it]}
+      scope.handle = null
+    scope.$watch "keyword", (v) ->
+      if scope.handle => $timeout.cancel scope.handle
+      scope.handle = $timeout search, 350
+
 .filter \type, -> (d, type) -> (d or [])filter(-> it.t == type)
+.filter \value, (DataService) -> (d) -> d.map -> it <<<{v:DataService[it.t]ref[it.id]}
 .filter \picked, (DataService) ->
   (d=[], p, picked=true) ->
     stand = p.{}stand.[][(DataService.user or {})id]
@@ -24,7 +49,7 @@ angular.module 'main', <[firebase]>
   # a and b: {t: \type, id: \id}
   ret.link = (cat, a, b, dir, name=null) ->
     ls = [a,b]map -> it.v.{}link.[][cat]
-    lk = [b,a]map -> {} <<< it{id,t} <<< {d: dir * (2 * &1 - 1),n: name}
+    lk = [b,a]map -> {} <<< it{id,t} <<< {d: -dir * (2 * &1 - 1),n: name}
     ls.map (n,i)-> if <[t id d n]>map(-> n[it]==lk[i][it])filter(->!it)length>0 => n.push lk[i]
     [a,b]map (it,i) ->
       if not ret[it.t]ref[it.id] => ret[it.t]ref[it.id] = it.v
@@ -40,7 +65,7 @@ angular.module 'main', <[firebase]>
       @ref.$save!
     prune: (n) ->
       @ref.n[n] = @ref.n.[][n]map(->
-        try if ret[it.type][it.id][it.field]!=n => throw \changed
+        try if ret[it.type]ref[it.id][it.field]!=n => throw \changed
         catch => it.id = null
         it
       )filter -> it and it.id
@@ -49,7 +74,7 @@ angular.module 'main', <[firebase]>
   base = (name) -> do
     ref: $firebase new Firebase "https://don.firebaseio.com/#{name}"
     create: ->
-      n = @ref.$add(it <<< {creator: ret.user, create_time: new Date!getTime!})
+      n = @ref.$add(it <<< {creator: {}<<<ret.user{id,username}, create_time: new Date!getTime!}, edit_time: new Date!getTime!)
       it.id = n.name!
       ret.name.add it.name, name, n.name!, \name
       it
@@ -61,6 +86,7 @@ angular.module 'main', <[firebase]>
   ret.proposal = base \proposal
   ret.plan = base \plan
   ret.comment = base \comment
+  ret.vision = base \vision
   ret.issue = base \issue
 
   ret
@@ -101,6 +127,8 @@ ctrl.base = ($scope, DS, ctrl-name) -> do
     item = $scope.create!
     DS.link cat, {id,t:type,v:ref}, {t:ctrl-name,id:item.id,v:item}, 1
     item
+  link: (cat, a, type, id, ref, dir=1) ->
+    DS.link cat, {id:a,t:ctrl-name,v:@get(ctrl-name, a)}, {t:type,id:id,v:ref}, dir
   delete: (key) ->
     if (!DS.user and DS[ctrl-name]ref[key]creator) or (DS.user and DS.user.id != DS[ctrl-name]ref[key].{}creator.id) => return
     types = {}
@@ -126,7 +154,9 @@ ctrl.base = ($scope, DS, ctrl-name) -> do
     if u in g.admin => delete g.admin
     else g.admin[u] = lv
     $scope.list.$save!
-  save: (k) -> DS[ctrl-name]ref.$save!
+  save: (k) ->
+    (DS[ctrl-name]ref[k] or {}) <<< {edit_time: new Date!getTime!}
+    DS[ctrl-name]ref.$save!
   list: DS[ctrl-name]ref
   links: (p, cat, type=null) ->
     ret = p.{}link[cat] or []
@@ -162,15 +192,8 @@ ctrl.plan = ($scope, DataService) ->
 ctrl.comment = ($scope, DataService) ->
   $scope <<< ctrl.base $scope, DataService, \comment
 
+ctrl.vision = ($scope, DataService) ->
+  $scope <<< ctrl.base $scope, DataService, \vision
+
 ctrl.issue = ($scope, DataService) ->
   $scope <<< ctrl.base $scope, DataService, \issue
-
-/*
-$scope.purge = ->
-  pk = $scope.get(\plan, it)proposal
-  obj = (DataService.proposal.ref[pk] or {}).[]plan
-  if it in obj =>
-    obj.splice obj.indexOf(it),1
-    DataService.proposal.ref.$save!
-  $scope.delete it
-*/
